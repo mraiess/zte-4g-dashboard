@@ -4,7 +4,7 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <meta name="color-scheme" content="dark light" />
-<title>ZTE MF253V · inwi 4G</title>
+<title>ZTE 4G dashboard · inwi</title>
 <link id="favicon" rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='12' fill='%238b9bb0'/%3E%3C/svg%3E" />
 <link rel="manifest" href="/manifest.webmanifest" />
 <meta name="theme-color" content="#0b0f14" />
@@ -330,7 +330,7 @@
     <div class="brand">
       <span class="dot" id="dot"></span>
       <div>
-        <h1>ZTE MF253V <span class="tag">inwi 4G</span></h1>
+        <h1>ZTE 4G <span class="tag">inwi</span></h1>
         <div class="sub" id="subline">connecting…</div>
       </div>
     </div>
@@ -1341,7 +1341,7 @@ function exportCsv() {
   const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
-  a.download = 'zte-mf253v-' + new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-') + '.csv';
+  a.download = 'zte-4g-' + new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-') + '.csv';
   document.body.appendChild(a);
   a.click();
   setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
@@ -1605,7 +1605,7 @@ function render(d) {
   document.querySelectorAll('.bandBtn').forEach((b) => b.classList.toggle('active', b.dataset.band === activeKey));
 
   // live tab title + favicon
-  document.title = (linked ? '↓ ' + fmtMbps(down) + ' Mbps' : 'Offline') + ' · ZTE MF253V';
+  document.title = (linked ? '↓ ' + fmtMbps(down) + ' Mbps' : 'Offline') + ' · ZTE 4G';
   setFavicon(!linked ? '#ef4444' : score >= 50 ? '#22c55e' : '#f59e0b');
 
   // link transitions
@@ -1877,7 +1877,7 @@ async function doReconnect() {
 async function copyReport() {
   const d = lastStatus || {};
   const lines = [
-    'ZTE MF253V — inwi',
+    'ZTE 4G — inwi',
     'Time: ' + new Date().toISOString(),
     'Operator: ' + (d.network_provider || '—'),
     'Type / band: ' + (d.network_type || '—') + ' / ' + (d.wan_active_band || '—'),

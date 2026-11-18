@@ -1,5 +1,5 @@
 {
-  "name": "ZTE MF253V Dashboard",
+  "name": "ZTE 4G Dashboard",
   "short_name": "4G Dashboard",
   "description": "Local dashboard for the ZTE MF253V 4G router",
   "start_url": "/",

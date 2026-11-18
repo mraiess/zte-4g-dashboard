@@ -1,4 +1,4 @@
-# ZTE MF253V dashboard
+# ZTE 4G dashboard
 
 A local, self-hosted web dashboard for the **ZTE MF253V** 4G/LTE router
 (inwi firmware). It shows live signal, throughput, latency and data usage, and
@@ -63,8 +63,8 @@ names; the proxy is easy to adjust in `server.js`.
 ## Quick start
 
 ```bash
-git clone https://github.com/<your-user>/zte-mf253v-dashboard.git
-cd zte-mf253v-dashboard
+git clone https://github.com/<your-user>/zte-4g-dashboard.git
+cd zte-4g-dashboard
 node server.js
 ```
 

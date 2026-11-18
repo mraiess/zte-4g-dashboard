@@ -1,7 +1,7 @@
 @echo off
 setlocal
 cd /d "%~dp0"
-title ZTE MF253V dashboard
+title ZTE 4G dashboard
 
 where node >nul 2>nul
 if errorlevel 1 (
@@ -32,7 +32,7 @@ if %errorlevel%==0 (
 )
 
 echo.
-echo   ZTE MF253V dashboard
+echo   ZTE 4G dashboard
 echo   %URL%
 echo.
 echo   Close this window to stop the server.

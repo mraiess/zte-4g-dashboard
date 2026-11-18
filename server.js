@@ -1,7 +1,7 @@
 'use strict';
 
 /*
- * ZTE MF253V advanced dashboard proxy.
+ * ZTE 4G advanced dashboard proxy.
  *
  * Serves index.html and proxies the router's goform API so the browser
  * never has to deal with CORS or the router's short-lived session.
@@ -1102,7 +1102,7 @@ const server = http.createServer(async (req, res) => {
 });
 
 server.listen(PORT, HOST, () => {
-  console.log('ZTE dashboard -> http://' + HOST + ':' + PORT);
+  console.log('ZTE 4G dashboard -> http://' + HOST + ':' + PORT);
   console.log('Router        -> ' + ROUTER);
   if (HOST === '0.0.0.0') {
     for (const [name, addrs] of Object.entries(os.networkInterfaces())) {
