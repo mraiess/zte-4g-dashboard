@@ -63,7 +63,7 @@ names; the proxy is easy to adjust in `server.js`.
 ## Quick start
 
 ```bash
-git clone https://github.com/<your-user>/zte-4g-dashboard.git
+git clone https://github.com/mraiess/zte-4g-dashboard.git
 cd zte-4g-dashboard
 node server.js
 ```
