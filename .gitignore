@@ -1,0 +1,17 @@
+# runtime data
+report.jsonl
+*.log
+
+# dependencies (none required, kept for safety)
+node_modules/
+
+# local config
+.env
+.env.*
+
+# OS / editor
+Thumbs.db
+Desktop.ini
+.DS_Store
+.vscode/
+.idea/

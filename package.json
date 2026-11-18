@@ -1,0 +1,21 @@
+{
+  "name": "zte-mf253v-dashboard",
+  "version": "3.0.0",
+  "private": true,
+  "description": "Local self-hosted dashboard and control panel for the ZTE MF253V 4G router",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "keywords": [
+    "zte",
+    "mf253v",
+    "lte",
+    "router",
+    "dashboard",
+    "inwi"
+  ]
+}

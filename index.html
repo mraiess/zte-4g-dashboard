@@ -1,0 +1,2035 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="color-scheme" content="dark light" />
+<title>ZTE MF253V · inwi 4G</title>
+<link id="favicon" rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='12' fill='%238b9bb0'/%3E%3C/svg%3E" />
+<link rel="manifest" href="/manifest.webmanifest" />
+<meta name="theme-color" content="#0b0f14" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="4G Dashboard" />
+<style>
+  :root{
+    --bg:#070b10;
+    --panel:#101720;
+    --panel-2:#0b1118;
+    --line:#1e2a38;
+    --line-2:#26364a;
+    --txt:#e8eff8;
+    --muted:#8b9bb0;
+    --dim:#5f7186;
+    --accent:#25d0b1;
+    --accent-2:#56b8ff;
+    --accent-3:#a78bfa;
+    --good:#22c55e;
+    --warn:#f59e0b;
+    --bad:#ef4444;
+    --shadow:0 18px 40px rgba(0,0,0,.38);
+    --grid:rgba(255,255,255,.045);
+  }
+  html[data-theme="light"]{
+    --bg:#eef3f9;
+    --panel:#ffffff;
+    --panel-2:#f6f9fc;
+    --line:#e0e8f1;
+    --line-2:#cfdbe8;
+    --txt:#0f1b2a;
+    --muted:#5c6b7d;
+    --dim:#8494a6;
+    --accent:#0e9f86;
+    --accent-2:#0b7fd4;
+    --accent-3:#7c5cf0;
+    --shadow:0 18px 40px rgba(15,40,70,.10);
+    --grid:rgba(15,40,70,.06);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    background:
+      radial-gradient(1200px 700px at 10% -10%, rgba(37,208,177,.12), transparent 60%),
+      radial-gradient(1000px 600px at 100% 0%, rgba(86,184,255,.12), transparent 55%),
+      var(--bg);
+    color:var(--txt);
+    font:15px/1.45 ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+    min-height:100vh;
+    padding:22px 20px 36px;
+    -webkit-font-smoothing:antialiased;
+  }
+  .app{max-width:1280px;margin:0 auto}
+
+  /* ---------- top bar ---------- */
+  .topbar{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:18px}
+  .brand{display:flex;align-items:center;gap:13px;min-width:0}
+  .dot{width:12px;height:12px;border-radius:50%;background:var(--dim);box-shadow:0 0 0 4px rgba(255,255,255,.04);transition:background .3s;flex:none}
+  .dot.ok{background:var(--good);box-shadow:0 0 0 4px rgba(34,197,94,.14),0 0 16px rgba(34,197,94,.65);animation:pulse 2.2s infinite}
+  .dot.err{background:var(--bad);box-shadow:0 0 0 4px rgba(239,68,68,.14),0 0 16px rgba(239,68,68,.6)}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+  h1{font-size:20px;margin:0;letter-spacing:.2px;display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+  .tag{font-size:11px;font-weight:600;letter-spacing:.4px;color:var(--accent);background:rgba(37,208,177,.10);border:1px solid rgba(37,208,177,.28);padding:2px 8px;border-radius:999px}
+  .sub{color:var(--muted);font-size:13px;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:70vw}
+  .controls{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .updated{color:var(--muted);font-size:12px;margin-right:2px}
+  button,select{
+    background:var(--panel);color:var(--txt);border:1px solid var(--line);
+    border-radius:10px;padding:8px 12px;font:inherit;font-size:13px;cursor:pointer;outline:none;
+    transition:border-color .15s,background .15s,transform .05s;
+  }
+  button:hover,select:hover{border-color:var(--line-2);background:var(--panel-2)}
+  button:active{transform:translateY(1px)}
+  button:disabled{opacity:.5;cursor:default}
+  .iconBtn{width:36px;padding:8px 0;text-align:center;font-size:15px}
+
+  .banner{display:none;margin:0 0 16px;padding:12px 14px;border-radius:12px;
+    background:rgba(239,68,68,.10);border:1px solid rgba(239,68,68,.35);color:#ffd9d9;font-size:13px}
+  .banner.show{display:block}
+
+  /* ---------- grid + cards ---------- */
+  .grid{display:grid;grid-template-columns:repeat(12,1fr);gap:14px}
+  .span3{grid-column:span 3}
+  .span4{grid-column:span 4}
+  .span5{grid-column:span 5}
+  .span8{grid-column:span 8}
+  @media(max-width:1100px){.span3,.span4,.span5{grid-column:span 6}.span8{grid-column:span 12}}
+  @media(max-width:720px){.span3,.span4,.span5,.span8{grid-column:span 12}}
+
+  .card{
+    position:relative;
+    background:linear-gradient(180deg,var(--panel) 0%,var(--panel-2) 100%);
+    border:1px solid var(--line);border-radius:18px;padding:16px 17px;
+    box-shadow:var(--shadow), inset 0 1px 0 rgba(255,255,255,.03);
+    overflow:hidden;
+  }
+  .card::before{content:"";position:absolute;inset:0 0 auto 0;height:1px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.10),transparent)}
+  .cardHead{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}
+  .cardHead h2{margin:0;font-size:11px;font-weight:700;letter-spacing:1.6px;text-transform:uppercase;color:var(--muted)}
+  .chip{font-size:11px;font-weight:600;padding:4px 9px;border-radius:999px;border:1px solid var(--line);color:var(--muted);white-space:nowrap}
+  .chip.good{color:var(--good);border-color:rgba(34,197,94,.4);background:rgba(34,197,94,.08)}
+  .chip.warn{color:var(--warn);border-color:rgba(245,158,11,.4);background:rgba(245,158,11,.08)}
+  .chip.bad{color:var(--bad);border-color:rgba(239,68,68,.4);background:rgba(239,68,68,.08)}
+
+  /* ---------- score ---------- */
+  .scoreWrap{position:relative;display:grid;place-items:center;margin:2px 0 4px}
+  .ring{width:158px;height:158px;transform:rotate(-90deg)}
+  .ringTrack{fill:none;stroke:var(--line);stroke-width:7}
+  .ringBar{fill:none;stroke:var(--accent);stroke-width:7;stroke-linecap:round;
+    stroke-dasharray:263.9;stroke-dashoffset:263.9;transition:stroke-dashoffset .7s ease,stroke .3s}
+  .scoreNum{position:absolute;display:flex;align-items:baseline;gap:2px}
+  .scoreNum b{font-size:40px;font-weight:700;letter-spacing:-1.5px;font-variant-numeric:tabular-nums}
+  .scoreNum span{color:var(--muted);font-size:12px}
+  .scoreLabel{text-align:center;font-weight:600;font-size:13px;margin-bottom:10px}
+  .miniStats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+  .miniStats div{background:rgba(255,255,255,.02);border:1px solid var(--line);border-radius:10px;padding:8px 6px;text-align:center}
+  .miniStats span{display:block;font-size:10px;letter-spacing:.6px;text-transform:uppercase;color:var(--muted);margin-bottom:2px}
+  .miniStats b{font-size:13px;font-variant-numeric:tabular-nums}
+
+  /* ---------- signal ---------- */
+  .signalTop{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:12px}
+  .bars{display:flex;align-items:flex-end;gap:5px;height:58px}
+  .bars i{display:block;width:12px;border-radius:4px;background:var(--line);transition:background .3s,box-shadow .3s}
+  .bars i:nth-child(1){height:18%}
+  .bars i:nth-child(2){height:36%}
+  .bars i:nth-child(3){height:55%}
+  .bars i:nth-child(4){height:76%}
+  .bars i:nth-child(5){height:100%}
+  .bars i.on{background:linear-gradient(180deg,var(--accent),#149b84);box-shadow:0 0 12px rgba(37,208,177,.45)}
+  .signalMeta{display:grid;grid-template-columns:1fr 1fr;gap:6px 16px;flex:1;max-width:240px}
+  .kv{display:flex;align-items:baseline;justify-content:space-between;gap:8px;border-bottom:1px dashed var(--grid);padding:3px 0}
+  .kv span{color:var(--muted);font-size:11px}
+  .kv b{font-size:12px;font-variant-numeric:tabular-nums}
+
+  /* ---------- charts ---------- */
+  canvas{width:100%;height:92px;display:block;border-radius:10px;background:rgba(255,255,255,.015);border:1px solid var(--grid)}
+  .legend{display:flex;align-items:center;gap:14px;margin-top:8px;color:var(--muted);font-size:11px}
+  .legend i{width:9px;height:9px;border-radius:3px;display:inline-block;margin-right:5px;vertical-align:middle}
+  .legend .l1{background:var(--accent)}
+  .legend .l2{background:var(--accent-2)}
+  .legend b{color:var(--txt);font-variant-numeric:tabular-nums}
+
+  /* ---------- throughput ---------- */
+  .rates{display:flex;gap:26px;margin:2px 0 12px}
+  .rate{display:flex;align-items:baseline;gap:7px}
+  .rate .arrow{font-size:19px;line-height:1}
+  .rate .arrow.down{color:var(--accent)}
+  .rate .arrow.up{color:var(--accent-2)}
+  .rate .num{font-size:30px;font-weight:700;font-variant-numeric:tabular-nums;letter-spacing:-.8px}
+  .rate .unit{color:var(--muted);font-size:12px}
+
+  /* ---------- rows ---------- */
+  .rows{display:grid;grid-template-columns:1fr 1fr;gap:0 20px}
+  @media(max-width:620px){.rows{grid-template-columns:1fr}}
+  .row{display:flex;justify-content:space-between;gap:10px;padding:8px 0;border-bottom:1px dashed var(--grid)}
+  .row:last-child{border-bottom:none}
+  .row span{color:var(--muted);font-size:12px}
+  .row b{font-weight:600;font-variant-numeric:tabular-nums;text-align:right;word-break:break-all;font-size:12.5px}
+
+  /* ---------- diagnostics ---------- */
+  .diagGrid{display:grid;gap:8px;margin-bottom:12px}
+  .diagRow{display:flex;align-items:center;gap:10px;padding:8px 10px;border:1px solid var(--line);border-radius:11px;background:rgba(255,255,255,.02)}
+  .diagRow .name{font-weight:600;font-size:12px;flex:none;width:52px}
+  .diagRow .ms{color:var(--muted);font-size:12px;font-variant-numeric:tabular-nums;flex:1}
+  .pill{font-size:10px;font-weight:700;letter-spacing:.6px;padding:3px 8px;border-radius:999px;border:1px solid var(--line);color:var(--muted);flex:none}
+  .pill.good{color:var(--good);border-color:rgba(34,197,94,.4);background:rgba(34,197,94,.08)}
+  .pill.warn{color:var(--warn);border-color:rgba(245,158,11,.4);background:rgba(245,158,11,.08)}
+  .pill.bad{color:var(--bad);border-color:rgba(239,68,68,.4);background:rgba(239,68,68,.08)}
+  .btnRow{display:flex;gap:8px;flex-wrap:wrap}
+  .btnRow button{flex:1;min-width:110px}
+  .speedWrap{margin-top:10px}
+  .speedResult{font-size:12.5px;color:var(--muted);min-height:18px}
+  .speedResult b{color:var(--accent);font-size:15px}
+  .speedBar{height:5px;border-radius:999px;background:var(--line);overflow:hidden;margin-top:8px;display:none}
+  .speedBar.running{display:block}
+  .speedBar::after{content:"";display:block;height:100%;width:38%;border-radius:999px;background:linear-gradient(90deg,var(--accent),var(--accent-2));animation:slide 1.1s infinite ease-in-out}
+  @keyframes slide{0%{transform:translateX(-100%)}100%{transform:translateX(320%)}}
+
+  /* ---------- controls ---------- */
+  .bandGrid{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-bottom:12px}
+  .bandBtn{padding:8px 4px;font-size:12px;border-radius:9px}
+  .bandBtn.active{border-color:var(--accent);color:var(--accent);background:rgba(37,208,177,.10);box-shadow:0 0 0 1px rgba(37,208,177,.25) inset}
+  .bandBtn.b7{opacity:.75}
+  .ctrlStatus{font-size:12px;color:var(--muted);min-height:18px;margin-top:10px;line-height:1.35}
+  .ctrlStatus.good{color:var(--good)}
+  .ctrlStatus.bad{color:var(--bad)}
+  .ctrlStatus.warn{color:var(--warn)}
+  .hint{font-size:11px;color:var(--dim);margin-top:6px}
+
+  /* ---------- usage ---------- */
+  .big{font-size:32px;font-weight:700;font-variant-numeric:tabular-nums;letter-spacing:-.8px;margin:0 0 12px}
+  .split{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+  .split .metric{background:rgba(255,255,255,.02);border:1px solid var(--line);border-radius:11px;padding:9px 11px}
+  .split .k{display:block;font-size:10px;letter-spacing:.7px;text-transform:uppercase;color:var(--muted);margin-bottom:3px}
+  .split .v{font-size:15px;font-weight:600;font-variant-numeric:tabular-nums}
+  .cycle{margin-top:12px;color:var(--muted);font-size:12px}
+  .cycle b{color:var(--txt)}
+  .split + .split{margin-top:9px}
+  .usageSub{display:block;font-size:10px;color:var(--muted);margin-top:2px;font-variant-numeric:tabular-nums}
+  .limitWrap{margin-top:12px}
+  .limitTop{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-bottom:5px}
+  .track{height:7px;border-radius:999px;background:var(--line);overflow:hidden}
+  .fill{height:100%;border-radius:999px;background:linear-gradient(90deg,var(--accent),var(--accent-2));width:0;transition:width .5s}
+
+  /* ---------- wifi / clients ---------- */
+  .wifiHead{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}
+  .ssid{font-size:16px;font-weight:700;letter-spacing:.1px;word-break:break-all}
+  .clientList{display:grid;gap:6px;margin-top:10px;max-height:190px;overflow:auto;padding-right:2px}
+  .client{display:flex;align-items:center;gap:9px;padding:7px 9px;border:1px solid var(--line);border-radius:10px;background:rgba(255,255,255,.02)}
+  .cIcon{width:24px;height:24px;border-radius:8px;display:grid;place-items:center;background:rgba(37,208,177,.10);font-size:12px;flex:none}
+  .cMain{flex:1;min-width:0}
+  .cMain b{display:block;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .cMain span{display:block;font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums}
+  .cMac{font-size:10px;color:var(--dim);font-family:ui-monospace,Consolas,monospace}
+  .empty{font-size:12px;color:var(--dim);padding:8px 0}
+
+  /* ---------- latency ---------- */
+  .latGrid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:10px}
+  .latMetric{background:rgba(255,255,255,.02);border:1px solid var(--line);border-radius:11px;padding:9px 11px}
+  .latMetric .k{display:flex;justify-content:space-between;gap:6px;font-size:10px;letter-spacing:.6px;text-transform:uppercase;color:var(--muted);margin-bottom:4px}
+  .latMetric .v{font-size:20px;font-weight:700;font-variant-numeric:tabular-nums;letter-spacing:-.4px}
+  .latMetric .v small{font-size:11px;font-weight:500;color:var(--muted);letter-spacing:0}
+  .latMetric .sub{font-size:10.5px;color:var(--dim);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+  /* ---------- speed history ---------- */
+  .speedHist{display:grid;gap:5px;margin-top:10px}
+  .shRow{display:flex;align-items:center;gap:8px;font-size:11px;color:var(--muted)}
+  .shRow .t{width:46px;flex:none;font-variant-numeric:tabular-nums}
+  .shBar{flex:1;height:6px;border-radius:999px;background:var(--line);overflow:hidden}
+  .shBar i{display:block;height:100%;border-radius:999px;background:linear-gradient(90deg,var(--accent),var(--accent-2))}
+  .shRow b{width:52px;text-align:right;color:var(--txt);font-variant-numeric:tabular-nums}
+
+  /* ---------- activity ---------- */
+  .activity{display:grid;gap:5px;max-height:200px;overflow:auto;padding-right:2px}
+  .actRow{display:flex;align-items:flex-start;gap:9px;padding:6px 8px;border:1px solid var(--line);border-radius:9px;background:rgba(255,255,255,.02)}
+  .actDot{width:7px;height:7px;border-radius:50%;margin-top:5px;flex:none;background:var(--muted)}
+  .actDot.good{background:var(--good)}
+  .actDot.warn{background:var(--warn)}
+  .actDot.bad{background:var(--bad)}
+  .actBody{flex:1;min-width:0}
+  .actBody b{display:block;font-size:11.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .actBody span{display:block;font-size:10.5px;color:var(--dim);font-variant-numeric:tabular-nums}
+  .actEmpty{font-size:12px;color:var(--dim);padding:8px 0}
+  .chipBtn{font-size:11px;font-weight:600;padding:4px 9px;border-radius:999px;border:1px solid var(--line);color:var(--muted);background:transparent;cursor:pointer}
+  .chipBtn:hover{border-color:var(--line-2);color:var(--txt)}
+  .alertsBtn.on{border-color:rgba(34,197,94,.45);color:var(--good);background:rgba(34,197,94,.08)}
+
+  footer{margin-top:22px;text-align:center;color:var(--muted);font-size:12px}
+  footer b{color:#b8c4d3;font-weight:600}
+  html[data-theme="light"] footer b{color:#334155}
+
+  /* ---------- tabs ---------- */
+  .tabs{display:flex;gap:6px;margin:0 0 14px;border-bottom:1px solid var(--line);padding-bottom:8px;flex-wrap:wrap}
+  .tab{background:transparent;border:1px solid transparent;color:var(--muted);padding:7px 15px;border-radius:9px;font-weight:600;font-size:13px}
+  .tab:hover{color:var(--txt);background:rgba(255,255,255,.03);border-color:var(--line)}
+  .tab.active{color:var(--accent);background:rgba(37,208,177,.10);border-color:rgba(37,208,177,.35)}
+  .tabPane{display:none}
+  .tabPane.active{display:grid}
+
+  /* ---------- forms ---------- */
+  input[type=text],input[type=password],input[type=number],input[type=search],textarea{
+    background:var(--panel-2);color:var(--txt);border:1px solid var(--line);border-radius:9px;
+    padding:8px 10px;font:inherit;font-size:13px;outline:none;width:100%;
+    transition:border-color .15s,box-shadow .15s;
+  }
+  input:focus,select:focus,textarea:focus{border-color:var(--accent);box-shadow:0 0 0 2px rgba(37,208,177,.12)}
+  input::placeholder{color:var(--dim)}
+  input:disabled{opacity:.45;cursor:not-allowed}
+  label{font-size:11px;color:var(--muted);letter-spacing:.3px}
+  .field{display:grid;gap:5px}
+  .formGrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .formGrid .full{grid-column:1/-1}
+  @media(max-width:620px){.formGrid{grid-template-columns:1fr}}
+  .formActions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+  .formActions button{flex:1;min-width:120px}
+  .primary{border-color:rgba(37,208,177,.45);color:var(--accent);background:rgba(37,208,177,.10)}
+  .primary:hover{background:rgba(37,208,177,.16)}
+  .danger{border-color:rgba(239,68,68,.45);color:#ffb4b4;background:rgba(239,68,68,.10)}
+  .danger:hover{background:rgba(239,68,68,.16)}
+  html[data-theme="light"] .danger{color:#b91c1c}
+  .inline{display:flex;align-items:center;gap:8px}
+  .inline input[type=checkbox]{width:auto;accent-color:var(--accent)}
+  .switch{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 11px;border:1px solid var(--line);border-radius:11px;background:rgba(255,255,255,.02);margin-bottom:10px}
+  .switch .lbl{font-size:12px;font-weight:600}
+  .switch .state{font-size:11px;color:var(--muted);margin-top:1px}
+  .switch button{padding:6px 10px;font-size:12px;flex:none}
+
+  /* ---------- network scan ---------- */
+  .netTable{display:grid;gap:6px;margin-top:10px;max-height:260px;overflow:auto;padding-right:2px}
+  .netRow{display:grid;grid-template-columns:1fr auto auto;align-items:center;gap:8px;padding:8px 10px;border:1px solid var(--line);border-radius:10px;background:rgba(255,255,255,.02)}
+  .netRow .nm{min-width:0}
+  .netRow .nm b{display:block;font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .netRow .nm span{display:block;font-size:10.5px;color:var(--muted)}
+  .netRow button{padding:5px 9px;font-size:11px}
+  .netRow.current{border-color:rgba(34,197,94,.35);background:rgba(34,197,94,.06)}
+  .netRow .tech{font-size:10px;font-weight:700;letter-spacing:.5px;padding:3px 7px;border-radius:999px;border:1px solid var(--line);color:var(--muted)}
+  .netRow .tech.lte{color:var(--accent);border-color:rgba(37,208,177,.35);background:rgba(37,208,177,.08)}
+  .netNote{font-size:11px;color:var(--dim);margin-top:8px}
+
+  /* ---------- availability report ---------- */
+  .reportTop{display:flex;align-items:baseline;gap:10px;margin-bottom:10px}
+  .reportTop b{font-size:28px;font-weight:700;letter-spacing:-.8px;font-variant-numeric:tabular-nums}
+  .reportTop span{color:var(--muted);font-size:12px}
+  .reportBars{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;align-items:end;height:84px;margin:6px 0 8px}
+  .reportBars .rb{display:flex;flex-direction:column;align-items:center;gap:4px;height:100%;justify-content:flex-end}
+  .reportBars .rb i{display:block;width:100%;border-radius:5px 5px 2px 2px;background:linear-gradient(180deg,var(--accent),rgba(37,208,177,.25));min-height:3px}
+  .reportBars .rb.low i{background:linear-gradient(180deg,var(--warn),rgba(245,158,11,.25))}
+  .reportBars .rb.bad i{background:linear-gradient(180deg,var(--bad),rgba(239,68,68,.25))}
+  .reportBars .rb span{font-size:9px;color:var(--dim);white-space:nowrap}
+  .reportLegend{display:flex;justify-content:space-between;font-size:10.5px;color:var(--muted)}
+  .blockRow{display:flex;align-items:center;gap:8px;padding:7px 9px;border:1px solid var(--line);border-radius:9px;background:rgba(255,255,255,.02)}
+  .blockRow .bm{flex:1;min-width:0;font-size:11px}
+  .blockRow .bm b{display:block;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .blockRow .bm span{color:var(--dim);font-family:ui-monospace,Consolas,monospace;font-size:10px}
+  .blockRow button{padding:4px 8px;font-size:11px}
+  .client .blockBtn{padding:4px 7px;font-size:10.5px;border-radius:8px;flex:none}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="topbar">
+    <div class="brand">
+      <span class="dot" id="dot"></span>
+      <div>
+        <h1>ZTE MF253V <span class="tag">inwi 4G</span></h1>
+        <div class="sub" id="subline">connecting…</div>
+      </div>
+    </div>
+    <div class="controls">
+      <span class="updated" id="lastUpdate">—</span>
+      <button id="installBtn" class="primary" hidden>Install app</button>
+      <button class="iconBtn" id="themeBtn" title="Toggle light / dark">☀</button>
+      <select id="interval" title="Refresh interval">
+        <option value="1000">1s</option>
+        <option value="3000" selected>3s</option>
+        <option value="5000">5s</option>
+        <option value="10000">10s</option>
+        <option value="0">Paused</option>
+      </select>
+      <button id="refresh">Refresh</button>
+    </div>
+  </header>
+
+  <div id="banner" class="banner"></div>
+
+  <nav class="tabs" id="tabs">
+    <button class="tab active" data-tab="overview">Overview</button>
+    <button class="tab" data-tab="control">Control</button>
+  </nav>
+
+  <main>
+    <div class="tabPane grid active" id="tab-overview">
+    <!-- connection score -->
+    <section class="card span3">
+      <div class="cardHead"><h2>Connection</h2><span class="chip" id="linkChip">—</span></div>
+      <div class="scoreWrap">
+        <svg viewBox="0 0 100 100" class="ring" aria-hidden="true">
+          <circle class="ringTrack" cx="50" cy="50" r="42"></circle>
+          <circle class="ringBar" id="ringBar" cx="50" cy="50" r="42"></circle>
+        </svg>
+        <div class="scoreNum"><b id="score">—</b><span>/100</span></div>
+      </div>
+      <div class="scoreLabel" id="scoreLabel">—</div>
+      <div class="miniStats">
+        <div><span>RSRP</span><b id="s_rsrp">—</b></div>
+        <div><span>RSRQ</span><b id="s_rsrq">—</b></div>
+        <div><span>Bars</span><b id="s_bars">—</b></div>
+      </div>
+    </section>
+
+    <!-- signal -->
+    <section class="card span5">
+      <div class="cardHead"><h2>Signal</h2><span class="chip" id="quality">—</span></div>
+      <div class="signalTop">
+        <div class="bars" id="bars"><i></i><i></i><i></i><i></i><i></i></div>
+        <div class="signalMeta">
+          <div class="kv"><span>PCI</span><b id="pci">—</b></div>
+          <div class="kv"><span>EARFCN</span><b id="earfcn">—</b></div>
+          <div class="kv"><span>RSSI</span><b id="rssi">—</b></div>
+          <div class="kv"><span>Band</span><b id="bandShort">—</b></div>
+        </div>
+      </div>
+      <canvas id="signalChart" height="92"></canvas>
+      <div class="legend">
+        <span><i class="l1"></i>RSRP <b id="sigRsrp">—</b></span>
+        <span><i class="l2"></i>RSRQ <b id="sigRsrq">—</b></span>
+      </div>
+    </section>
+
+    <!-- throughput -->
+    <section class="card span4">
+      <div class="cardHead"><h2>Throughput</h2><span class="chip" id="peakChip">—</span></div>
+      <div class="rates">
+        <div class="rate"><span class="arrow down">↓</span><span class="num" id="down">0.00</span><span class="unit">Mbps</span></div>
+        <div class="rate"><span class="arrow up">↑</span><span class="num" id="up">0.00</span><span class="unit">Mbps</span></div>
+      </div>
+      <canvas id="chart" height="92"></canvas>
+      <div class="legend">
+        <span><i class="l1"></i>Down</span>
+        <span><i class="l2"></i>Up</span>
+        <span style="margin-left:auto" id="avgChip">—</span>
+      </div>
+    </section>
+
+    <!-- network -->
+    <section class="card span4">
+      <div class="cardHead"><h2>Network</h2><span class="chip" id="netChip">—</span></div>
+      <div class="rows">
+        <div class="row"><span>Operator</span><b id="operator">—</b></div>
+        <div class="row"><span>Type / band</span><b id="band">—</b></div>
+        <div class="row"><span>WAN IP</span><b id="wanip">—</b></div>
+        <div class="row"><span>Gateway</span><b id="gateway">—</b></div>
+        <div class="row"><span>Netmask</span><b id="netmask">—</b></div>
+        <div class="row"><span>Dial failures</span><b id="dialfail">—</b></div>
+        <div class="row"><span>Session time</span><b id="session">—</b></div>
+        <div class="row"><span>PIN</span><b id="pin">—</b></div>
+      </div>
+    </section>
+
+    <!-- diagnostics -->
+    <section class="card span4">
+      <div class="cardHead"><h2>Diagnostics</h2><span class="chip" id="diagChip">—</span></div>
+      <div class="diagGrid">
+        <div class="diagRow"><span class="name">DNS</span><span class="ms" id="dnsMs">—</span><span class="pill" id="dnsPill">—</span></div>
+        <div class="diagRow"><span class="name">TCP 443</span><span class="ms" id="tcpMs">—</span><span class="pill" id="tcpPill">—</span></div>
+        <div class="diagRow"><span class="name">HTTPS</span><span class="ms" id="httpMs">—</span><span class="pill" id="httpPill">—</span></div>
+      </div>
+      <div class="btnRow">
+        <button id="diagBtn">Run diagnostics</button>
+        <button id="speedBtn">Speed test</button>
+      </div>
+      <div class="speedWrap">
+        <div class="speedResult" id="speedResult">Speed test downloads 10 MB.</div>
+        <div class="speedBar" id="speedBar"></div>
+        <div class="speedHist" id="speedHist"></div>
+      </div>
+    </section>
+
+    <!-- controls -->
+    <section class="card span4">
+      <div class="cardHead"><h2>Controls</h2><span class="chip" id="ctrlChip">live</span></div>
+      <div class="bandGrid" id="bandGrid">
+        <button class="bandBtn" data-band="auto">Auto</button>
+        <button class="bandBtn" data-band="b1">B1</button>
+        <button class="bandBtn" data-band="b3">B3</button>
+        <button class="bandBtn b7" data-band="b7">B7</button>
+        <button class="bandBtn" data-band="b20">B20</button>
+      </div>
+      <div class="btnRow">
+        <button id="reconnectBtn">Reconnect</button>
+        <button id="copyBtn">Copy report</button>
+      </div>
+      <div class="btnRow" style="margin-top:8px">
+        <button id="csvBtn">Export CSV</button>
+        <button id="alertsBtn" class="alertsBtn">Alerts: off</button>
+      </div>
+      <div class="ctrlStatus" id="ctrlStatus">Pick a band or reconnect the session.</div>
+      <div class="hint">Band changes drop the link for 10–30 s. Auto lets the router pick the best LTE band (B3/B20).</div>
+    </section>
+
+    <!-- latency -->
+    <section class="card span4">
+      <div class="cardHead"><h2>Latency</h2><span class="chip" id="latChip">—</span></div>
+      <div class="latGrid">
+        <div class="latMetric">
+          <div class="k"><span>Router</span><span id="lanLoss">—</span></div>
+          <div class="v" id="lanMs">—<small> ms</small></div>
+          <div class="sub" id="lanSub">LAN</div>
+        </div>
+        <div class="latMetric">
+          <div class="k"><span>Internet</span><span id="wanLoss">—</span></div>
+          <div class="v" id="wanMs">—<small> ms</small></div>
+          <div class="sub" id="wanSub">WAN</div>
+        </div>
+      </div>
+      <canvas id="latChart" height="92"></canvas>
+      <div class="legend">
+        <span><i class="l1"></i>Router</span>
+        <span><i class="l2"></i>Internet</span>
+        <span style="margin-left:auto" id="latAvg">—</span>
+      </div>
+    </section>
+
+    <!-- data usage -->
+    <section class="card span4">
+      <div class="cardHead"><h2>Data usage</h2><span class="chip" id="cycleChip">—</span></div>
+      <div class="big" id="total">—</div>
+      <div class="split">
+        <div class="metric"><span class="k">This cycle ↓</span><span class="v" id="rx">—</span></div>
+        <div class="metric"><span class="k">This cycle ↑</span><span class="v" id="tx">—</span></div>
+      </div>
+      <div class="split">
+        <div class="metric" title="Yesterday 00:00–24:00"><span class="k">Yesterday</span><span class="v" id="dayUsage">—</span><span class="usageSub" id="daySplit">—</span></div>
+        <div class="metric" title="The 7 complete days ending yesterday"><span class="k">Last 7 full days</span><span class="v" id="weekUsage">—</span><span class="usageSub" id="weekSplit">—</span></div>
+      </div>
+      <div class="cycle">Resets <b id="cycle">—</b> · session ↓<b id="sessRx">—</b> ↑<b id="sessTx">—</b></div>
+      <div class="limitWrap" id="limitWrap" style="display:none">
+        <div class="limitTop"><span>Plan limit</span><span id="limitText">—</span></div>
+        <div class="track"><div class="fill" id="limitBar"></div></div>
+      </div>
+    </section>
+
+    <!-- wifi + clients -->
+    <section class="card span4">
+      <div class="cardHead"><h2>WiFi</h2><span class="chip" id="wifiState">—</span></div>
+      <div class="wifiHead">
+        <div>
+          <div class="ssid" id="ssid">—</div>
+          <div class="sub" id="wifiSub" style="max-width:none">—</div>
+        </div>
+      </div>
+      <div class="rows">
+        <div class="row"><span>Security</span><b id="security">—</b></div>
+        <div class="row"><span>Channel</span><b id="channel">—</b></div>
+      </div>
+      <div class="clientList" id="clientList"><div class="empty">Loading devices…</div></div>
+    </section>
+
+    <!-- device -->
+    <section class="card span4">
+      <div class="cardHead"><h2>Device</h2><span class="chip" id="deviceChip">—</span></div>
+      <div class="rows">
+        <div class="row"><span>Model</span><b id="model">—</b></div>
+        <div class="row"><span>Firmware</span><b id="fw">—</b></div>
+        <div class="row"><span>Web UI</span><b id="web">—</b></div>
+        <div class="row"><span>Hardware</span><b id="hw">—</b></div>
+        <div class="row"><span>IMEI</span><b id="imei">—</b></div>
+        <div class="row"><span>SIM</span><b id="sim">—</b></div>
+      </div>
+    </section>
+
+    <!-- activity -->
+    <section class="card span8">
+      <div class="cardHead"><h2>Activity</h2><button class="chipBtn" id="clearEvents">clear</button></div>
+      <div class="activity" id="activityList"><div class="actEmpty">No events yet.</div></div>
+    </section>
+    </div><!-- /tab-overview -->
+
+    <div class="tabPane grid" id="tab-control">
+      <!-- connection -->
+      <section class="card span4">
+        <div class="cardHead"><h2>Connection</h2><span class="chip" id="connState">—</span></div>
+        <div class="switch">
+          <div><div class="lbl">Mobile data</div><div class="state" id="connMeta">—</div></div>
+          <button id="connBtn" class="primary">Disconnect</button>
+        </div>
+        <div class="rows">
+          <div class="row"><span>WAN IP</span><b id="connIp">—</b></div>
+          <div class="row"><span>Gateway</span><b id="connGw">—</b></div>
+          <div class="row"><span>Selection</span><b id="connMode">—</b></div>
+        </div>
+        <div class="ctrlStatus" id="connStatus">Disconnecting stops internet for every device.</div>
+      </section>
+
+      <!-- network / operator -->
+      <section class="card span8">
+        <div class="cardHead"><h2>Network · operator</h2><span class="chip" id="netModeChip">—</span></div>
+        <div class="rows" style="margin-bottom:10px">
+          <div class="row"><span>Selection</span><b id="netMode">—</b></div>
+          <div class="row"><span>Provider / tech</span><b id="netProv">—</b></div>
+        </div>
+        <div class="btnRow">
+          <button id="scanBtn">Scan networks</button>
+          <button id="autoNetBtn">Automatic</button>
+        </div>
+        <div class="netTable" id="netList"><div class="empty">Scan to see nearby operators.</div></div>
+        <div class="netNote">Manual selection may drop the link while the router registers.</div>
+        <div class="ctrlStatus" id="netStatus"></div>
+      </section>
+
+      <!-- wifi -->
+      <section class="card span4">
+        <div class="cardHead"><h2>WiFi</h2><span class="chip" id="wifiCtrlState">—</span></div>
+        <div class="switch">
+          <div><div class="lbl">WiFi radio</div><div class="state" id="wifiCtrlSub">—</div></div>
+          <button id="wifiToggle">Turn off</button>
+        </div>
+        <div class="formGrid">
+          <div class="field full"><label for="wifiSsid">SSID</label><input id="wifiSsid" type="text" maxlength="32" /></div>
+          <div class="field full"><label for="wifiPass">New password (blank = keep)</label><input id="wifiPass" type="password" minlength="8" maxlength="63" placeholder="8–63 characters" /></div>
+          <div class="field"><label for="wifiChannel">Channel</label><select id="wifiChannel">
+            <option value="0">Auto</option>
+            <option value="1">1</option><option value="2">2</option><option value="3">3</option>
+            <option value="4">4</option><option value="5">5</option><option value="6">6</option>
+            <option value="7">7</option><option value="8">8</option><option value="9">9</option>
+            <option value="10">10</option><option value="11">11</option><option value="12">12</option><option value="13">13</option>
+          </select></div>
+          <div class="field"><label>Visibility</label><label class="inline" style="height:35px"><input id="wifiHidden" type="checkbox" /> Hide SSID</label></div>
+        </div>
+        <div class="formActions"><button id="wifiApply" class="primary">Apply WiFi</button></div>
+        <div class="ctrlStatus" id="wifiCtrlStatus">Changing WiFi disconnects wireless devices for a moment.</div>
+      </section>
+
+      <!-- apn / dns -->
+      <section class="card span8">
+        <div class="cardHead"><h2>APN · DNS</h2><span class="chip" id="apnChip">—</span></div>
+        <div class="formGrid">
+          <div class="field"><label for="apnName">Profile name</label><input id="apnName" type="text" /></div>
+          <div class="field"><label for="apnApn">APN</label><input id="apnApn" type="text" placeholder="www.inwi.ma" /></div>
+          <div class="field"><label for="apnAuth">Auth</label><select id="apnAuth">
+            <option value="none">None</option><option value="pap">PAP</option>
+            <option value="chap">CHAP</option><option value="papchap">PAP/CHAP</option>
+          </select></div>
+          <div class="field"><label for="apnUser">Username</label><input id="apnUser" type="text" /></div>
+          <div class="field"><label for="apnPass">Password (blank = keep)</label><input id="apnPass" type="password" placeholder="unchanged" /></div>
+          <div class="field"><label for="apnDnsMode">DNS mode</label><select id="apnDnsMode">
+            <option value="auto">Automatic</option><option value="manual">Manual</option>
+          </select></div>
+          <div class="field"><label for="apnDns1">DNS 1</label><input id="apnDns1" type="text" placeholder="1.1.1.1" /></div>
+          <div class="field"><label for="apnDns2">DNS 2</label><input id="apnDns2" type="text" placeholder="8.8.8.8" /></div>
+        </div>
+        <div class="formActions"><button id="apnApply" class="primary">Save &amp; reconnect</button></div>
+        <div class="ctrlStatus" id="apnStatus">Saving the APN reconnects the mobile link (~10–30 s).</div>
+      </section>
+
+      <!-- data limit -->
+      <section class="card span4">
+        <div class="cardHead"><h2>Data limit</h2><span class="chip" id="limChip">—</span></div>
+        <div class="switch">
+          <div><div class="lbl">Monthly limit</div><div class="state" id="limSub">—</div></div>
+          <label class="inline"><input id="limEnabled" type="checkbox" /> Enable</label>
+        </div>
+        <div class="formGrid">
+          <div class="field"><label for="limSize">Size</label><input id="limSize" type="number" min="1" step="1" /></div>
+          <div class="field"><label for="limUnit">Unit</label><select id="limUnit"><option>GB</option><option>MB</option></select></div>
+          <div class="field"><label for="limAlert">Alert at %</label><input id="limAlert" type="number" min="1" max="100" /></div>
+          <div class="field"><label for="limDate">Reset day</label><input id="limDate" type="number" min="1" max="31" /></div>
+        </div>
+        <label class="inline" style="margin-top:10px"><input id="limAuto" type="checkbox" /> Auto-clear usage each cycle</label>
+        <div class="formActions"><button id="limApply" class="primary">Save limit</button></div>
+        <div class="ctrlStatus" id="limStatus"></div>
+      </section>
+
+      <!-- blocked devices -->
+      <section class="card span4">
+        <div class="cardHead"><h2>Blocked devices</h2><span class="chip" id="blockChip">—</span></div>
+        <div class="clientList" id="blockList"><div class="empty">No blocked devices.</div></div>
+        <div class="formActions"><button id="clearBlocks" class="danger">Clear all</button></div>
+        <div class="hint">Block WiFi devices from the Overview → WiFi list.</div>
+      </section>
+
+      <!-- maintenance -->
+      <section class="card span4">
+        <div class="cardHead"><h2>Maintenance</h2><span class="chip" id="maintChip">—</span></div>
+        <div class="btnRow">
+          <button id="rebootBtn" class="danger">Reboot router</button>
+          <button id="installBtn2">Install app</button>
+        </div>
+        <div class="reportTop" style="margin-top:14px"><b id="repUptime">—</b><span>uptime · last 7 days</span></div>
+        <div class="reportBars" id="reportBars"></div>
+        <div class="reportLegend"><span id="repWan">—</span><span id="repLoss">—</span></div>
+        <div class="btnRow" style="margin-top:10px"><button id="reportBtn">Refresh report</button><button id="reportCsvBtn">Download CSV</button></div>
+        <div class="ctrlStatus" id="maintStatus"></div>
+      </section>
+    </div><!-- /tab-control -->
+  </main>
+
+  <footer>Local dashboard · proxied from <b id="routerIp">192.168.0.1</b> · <span id="ivl">3s</span> refresh · v3.0</footer>
+</div>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const HIST = 90;
+const histDown = [], histUp = [], histRsrp = [], histRsrq = [], histTs = [];
+const BAND_LABELS = { auto: 'Auto (all bands)', b1: 'B1', b3: 'B3', b7: 'B7', b20: 'B20' };
+
+let interval = 3000;
+let timer = null;
+let lastStatus = null;
+let speedRunning = false;
+let diagRunning = false;
+
+let latSamples = { lan: [], wan: [] };
+let prevLinked = null;
+let prevDnsOk = null;
+let prevSignalBad = false;
+let alertsEnabled = localStorage.getItem('alerts') === '1';
+
+let events = [];
+let speedHistory = [];
+try { events = JSON.parse(localStorage.getItem('events') || '[]'); } catch (_) { events = []; }
+try { speedHistory = JSON.parse(localStorage.getItem('speedHistory') || '[]'); } catch (_) { speedHistory = []; }
+
+/* ---------- formatters ---------- */
+function fmtBytes(n) {
+  n = Number(n) || 0;
+  const u = ['B', 'KB', 'MB', 'GB', 'TB'];
+  let i = 0;
+  while (n >= 1024 && i < u.length - 1) { n /= 1024; i++; }
+  const d = i === 0 ? 0 : n >= 100 ? 0 : n >= 10 ? 1 : 2;
+  return n.toFixed(d) + ' ' + u[i];
+}
+function fmtMbps(bytesPerSec) {
+  const v = (Number(bytesPerSec) || 0) * 8 / 1e6;
+  return v.toFixed(v >= 100 ? 0 : v >= 10 ? 1 : 2);
+}
+function fmtDate(s) {
+  s = String(s || '');
+  if (s.length !== 8) return s || '—';
+  return s.slice(0, 4) + '-' + s.slice(4, 6) + '-' + s.slice(6, 8);
+}
+function fmtMinutes(m) {
+  m = Number(m) || 0;
+  if (m <= 0) return '—';
+  const d = Math.floor(m / 1440);
+  const h = Math.floor((m % 1440) / 60);
+  const min = m % 60;
+  if (d) return d + 'd ' + h + 'h';
+  if (h) return h + 'h ' + min + 'm';
+  return min + 'm';
+}
+function prettyPpp(s) {
+  if (!s) return '—';
+  if (s === 'ppp_connected') return 'Connected';
+  if (s === 'ppp_disconnected') return 'Disconnected';
+  if (s === 'ppp_connecting') return 'Connecting…';
+  return s.replace(/^ppp_/, '').replace(/_/g, ' ');
+}
+function qualityOf(rsrp) {
+  const r = Number(rsrp);
+  if (!rsrp || !isFinite(r)) return { label: '—', cls: '' };
+  if (r >= -80) return { label: 'Excellent', cls: 'good' };
+  if (r >= -90) return { label: 'Good', cls: 'good' };
+  if (r >= -100) return { label: 'Fair', cls: 'warn' };
+  if (r >= -110) return { label: 'Poor', cls: 'bad' };
+  return { label: 'Very poor', cls: 'bad' };
+}
+function esc(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+  }[c]));
+}
+
+/* ---------- control tab state ---------- */
+let settings = null;
+let connBusy = false;
+let wifiBusy = false;
+let netScanBusy = false;
+let lastReport = null;
+let deferredInstall = null;
+
+async function postJson(url, body) {
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body === undefined ? {} : body),
+  });
+  const j = await res.json().catch(() => ({}));
+  if (!j.ok) throw new Error(j.error || ('HTTP ' + res.status));
+  return j;
+}
+function setStatus(id, msg, cls) {
+  const el = $(id);
+  if (!el) return;
+  el.textContent = msg;
+  el.className = 'ctrlStatus' + (cls ? ' ' + cls : '');
+}
+function setBusy(btn, busy, label) {
+  if (!btn) return;
+  if (busy) {
+    if (!btn.dataset.label) btn.dataset.label = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = label || 'Working…';
+  } else {
+    btn.disabled = false;
+    if (btn.dataset.label) { btn.textContent = btn.dataset.label; delete btn.dataset.label; }
+  }
+}
+
+function updateConnState(ppp) {
+  const linked = ppp === 'ppp_connected';
+  const chip = $('connState');
+  if (chip) {
+    chip.textContent = linked ? 'Connected' : prettyPpp(ppp);
+    chip.className = 'chip ' + (linked ? 'good' : 'bad');
+  }
+  const btn = $('connBtn');
+  if (btn && !connBusy) {
+    btn.textContent = linked ? 'Disconnect' : 'Connect';
+    btn.dataset.action = linked ? 'disconnect' : 'connect';
+    btn.className = linked ? 'danger' : 'primary';
+  }
+  const meta = $('connMeta');
+  if (meta) meta.textContent = linked ? 'Online' + (lastStatus && lastStatus.wan_ipaddr ? ' · ' + lastStatus.wan_ipaddr : '') : 'Offline';
+}
+
+function updateApnDnsState() {
+  const manual = $('apnDnsMode') && $('apnDnsMode').value === 'manual';
+  if ($('apnDns1')) $('apnDns1').disabled = !manual;
+  if ($('apnDns2')) $('apnDns2').disabled = !manual;
+}
+
+function renderBlocked(list) {
+  const el = $('blockList');
+  if (!el) return;
+  if (!list || !list.length) { el.innerHTML = '<div class="empty">No blocked devices.</div>'; return; }
+  el.innerHTML = list.map((b) => (
+    '<div class="blockRow"><div class="bm"><b>' + esc(b.host || 'Blocked device') + '</b><span>' + esc(b.mac) + '</span></div>' +
+    '<button data-mac="' + esc(b.mac) + '">Unblock</button></div>'
+  )).join('');
+  el.querySelectorAll('button[data-mac]').forEach((btn) => {
+    btn.addEventListener('click', () => unblockMac(btn.dataset.mac));
+  });
+}
+
+function renderSettings() {
+  if (!settings) return;
+  const w = settings.wifi;
+  $('wifiSsid').value = w.ssid || '';
+  $('wifiHidden').checked = !!w.hidden;
+  $('wifiChannel').value = String(w.channel || '0');
+  $('wifiCtrlState').textContent = w.enabled ? 'ON' : 'OFF';
+  $('wifiCtrlState').className = 'chip ' + (w.enabled ? 'good' : 'bad');
+  $('wifiCtrlSub').textContent = (w.ssid || '—') + ' · ' + (w.auth || '') + (w.encryp ? '/' + w.encryp : '');
+  $('wifiToggle').textContent = w.enabled ? 'Turn off' : 'Turn on';
+
+  const a = settings.apn;
+  $('apnName').value = a.profileName || '';
+  $('apnApn').value = a.wanApn || '';
+  $('apnAuth').value = a.authMode || 'none';
+  $('apnUser').value = a.username || '';
+  $('apnPass').value = '';
+  $('apnDnsMode').value = a.dnsMode || 'auto';
+  $('apnDns1').value = a.dns1 || '';
+  $('apnDns2').value = a.dns2 || '';
+  $('apnChip').textContent = a.dnsMode === 'manual' ? 'DNS manual' : 'DNS auto';
+  $('apnChip').className = 'chip ' + (a.dnsMode === 'manual' ? 'good' : 'warn');
+  updateApnDnsState();
+
+  const l = settings.limit;
+  $('limEnabled').checked = !!l.enabled;
+  $('limSize').value = l.sizeValue || '';
+  $('limUnit').value = l.sizeUnit || 'GB';
+  $('limAlert').value = l.alertPercent || 90;
+  $('limDate').value = l.clearDate || 1;
+  $('limAuto').checked = String(l.autoClear).toLowerCase() === 'on';
+  $('limChip').textContent = l.enabled ? 'on' : 'off';
+  $('limChip').className = 'chip ' + (l.enabled ? 'good' : '');
+  $('limSub').textContent = l.enabled
+    ? (l.sizeValue + ' ' + l.sizeUnit + ' · alert ' + l.alertPercent + '%')
+    : 'No limit set';
+
+  const m = settings.mac;
+  $('blockChip').textContent = m.blacklist.length + ' blocked';
+  $('blockChip').className = 'chip ' + (m.blacklist.length ? 'warn' : '');
+  renderBlocked(m.blacklist);
+
+  const n = settings.net;
+  const manual = n.mode === 'manual_select' || n.save === 'manual_select';
+  $('netMode').textContent = manual ? 'Manual' : 'Automatic';
+  $('netProv').textContent = (n.provider || '—') + (n.type ? ' · ' + n.type : '');
+  $('netModeChip').textContent = manual ? 'manual' : 'auto';
+  $('netModeChip').className = 'chip ' + (manual ? 'warn' : 'good');
+  $('connIp').textContent = n.ip || '—';
+  $('connGw').textContent = n.gateway || '—';
+  $('connMode').textContent = manual ? 'Manual operator' : 'Automatic';
+  updateConnState(n.ppp);
+}
+
+async function loadSettings() {
+  try {
+    const res = await fetch('/api/settings', { cache: 'no-store' });
+    const j = await res.json();
+    if (!j.ok) throw new Error(j.error || 'failed');
+    settings = j.settings;
+    renderSettings();
+  } catch (e) {
+    setStatus('connStatus', 'Could not load settings: ' + e.message, 'bad');
+  }
+}
+
+async function toggleConnection() {
+  const btn = $('connBtn');
+  const action = btn.dataset.action || 'connect';
+  if (action === 'disconnect' && !confirm('Disconnect mobile data?\n\nAll devices will lose internet until you reconnect.')) return;
+  connBusy = true;
+  setBusy(btn, true, action === 'disconnect' ? 'Disconnecting…' : 'Connecting…');
+  setStatus('connStatus', action === 'disconnect' ? 'Disconnecting…' : 'Connecting… this can take ~45 s', 'warn');
+  try {
+    const j = await postJson('/api/connection', { action });
+    setStatus('connStatus', j.connected ? 'Connected' : 'Not connected yet', j.connected ? 'good' : 'bad');
+    addEvent(j.connected ? 'good' : 'warn', action === 'disconnect' ? 'Mobile data disconnected' : (j.connected ? 'Mobile data connected' : 'Connect incomplete'));
+    await tick();
+    await loadSettings();
+  } catch (e) {
+    setStatus('connStatus', 'Failed: ' + e.message, 'bad');
+    addEvent('bad', 'Connection action failed: ' + e.message);
+  } finally {
+    connBusy = false;
+    setBusy(btn, false);
+  }
+}
+
+async function toggleWifi() {
+  if (!settings) return;
+  const on = settings.wifi.enabled;
+  const btn = $('wifiToggle');
+  if (!confirm((on ? 'Turn WiFi off?' : 'Turn WiFi on?') + '\n\nWireless devices will disconnect briefly.')) return;
+  wifiBusy = true;
+  setBusy(btn, true, on ? 'Turning off…' : 'Turning on…');
+  setStatus('wifiCtrlStatus', on ? 'Turning WiFi off…' : 'Turning WiFi on…', 'warn');
+  try {
+    await postJson('/api/wifi', { enabled: !on });
+    setStatus('wifiCtrlStatus', 'WiFi ' + (!on ? 'on' : 'off'), 'good');
+    addEvent('warn', 'WiFi ' + (!on ? 'on' : 'off'));
+    await loadSettings();
+  } catch (e) {
+    setStatus('wifiCtrlStatus', 'Failed: ' + e.message, 'bad');
+  } finally {
+    wifiBusy = false;
+    setBusy(btn, false);
+  }
+}
+
+async function applyWifi() {
+  if (!settings) return;
+  const ssid = $('wifiSsid').value.trim();
+  const password = $('wifiPass').value;
+  const channel = $('wifiChannel').value;
+  const hidden = $('wifiHidden').checked;
+  if (!ssid) { setStatus('wifiCtrlStatus', 'SSID is required', 'bad'); return; }
+  if (password && (password.length < 8 || password.length > 63)) {
+    setStatus('wifiCtrlStatus', 'Password must be 8–63 characters', 'bad');
+    return;
+  }
+  const changes = [];
+  if (ssid !== settings.wifi.ssid) changes.push('SSID');
+  if (password) changes.push('password');
+  if (hidden !== !!settings.wifi.hidden) changes.push('hidden SSID');
+  if (String(channel) !== String(settings.wifi.channel)) changes.push('channel');
+  if (!changes.length) { setStatus('wifiCtrlStatus', 'Nothing changed', 'warn'); return; }
+  if (!confirm('Apply WiFi changes: ' + changes.join(', ') + '?\n\nWireless devices will disconnect briefly.')) return;
+
+  const btn = $('wifiApply');
+  setBusy(btn, true, 'Applying…');
+  setStatus('wifiCtrlStatus', 'Applying WiFi settings…', 'warn');
+  try {
+    const payload = { channel };
+    if (ssid !== settings.wifi.ssid || password || hidden !== !!settings.wifi.hidden) {
+      payload.ssid = ssid;
+      payload.hidden = hidden;
+      if (password) payload.password = password;
+    }
+    await postJson('/api/wifi', payload);
+    $('wifiPass').value = '';
+    setStatus('wifiCtrlStatus', 'WiFi settings saved', 'good');
+    addEvent('good', 'WiFi updated: ' + changes.join(', '));
+    await loadSettings();
+  } catch (e) {
+    setStatus('wifiCtrlStatus', 'Failed: ' + e.message, 'bad');
+    addEvent('bad', 'WiFi update failed: ' + e.message);
+  } finally {
+    setBusy(btn, false);
+  }
+}
+
+async function applyApn() {
+  if (!settings) return;
+  const wanApn = $('apnApn').value.trim();
+  if (!wanApn) { setStatus('apnStatus', 'APN is required', 'bad'); return; }
+  const dnsMode = $('apnDnsMode').value;
+  const dns1 = $('apnDns1').value.trim();
+  const dns2 = $('apnDns2').value.trim();
+  if (dnsMode === 'manual' && (!dns1 || !dns2)) {
+    setStatus('apnStatus', 'Both DNS servers are required for manual mode', 'bad');
+    return;
+  }
+  if (!confirm('Save APN/DNS and reconnect the mobile link?\n\nInternet will drop for ~10–30 seconds.')) return;
+  const btn = $('apnApply');
+  setBusy(btn, true, 'Saving…');
+  setStatus('apnStatus', 'Saving APN and reconnecting… this can take ~30 s', 'warn');
+  try {
+    const j = await postJson('/api/apn', {
+      profileName: $('apnName').value.trim() || 'inwi',
+      wanApn,
+      authMode: $('apnAuth').value,
+      username: $('apnUser').value,
+      password: $('apnPass').value,
+      dnsMode,
+      dns1,
+      dns2,
+    });
+    $('apnPass').value = '';
+    setStatus('apnStatus', j.connected ? 'APN saved · connected' : 'APN saved · link not up yet', j.connected ? 'good' : 'warn');
+    addEvent(j.connected ? 'good' : 'warn', 'APN/DNS saved');
+    await loadSettings();
+    await tick();
+  } catch (e) {
+    setStatus('apnStatus', 'Failed: ' + e.message, 'bad');
+    addEvent('bad', 'APN save failed: ' + e.message);
+  } finally {
+    setBusy(btn, false);
+  }
+}
+
+async function applyLimit() {
+  const enabled = $('limEnabled').checked;
+  const size = Number($('limSize').value);
+  const unit = $('limUnit').value;
+  const alertPercent = Number($('limAlert').value);
+  const clearDate = Number($('limDate').value);
+  const autoClear = $('limAuto').checked;
+  if (enabled && (!isFinite(size) || size <= 0)) {
+    setStatus('limStatus', 'Enter a limit greater than 0', 'bad');
+    return;
+  }
+  const btn = $('limApply');
+  setBusy(btn, true, 'Saving…');
+  setStatus('limStatus', 'Saving data limit…', 'warn');
+  try {
+    await postJson('/api/limit', { enabled, size, unit, alertPercent, clearDate, autoClear });
+    setStatus('limStatus', enabled ? 'Limit saved' : 'Limit disabled', 'good');
+    addEvent('good', enabled ? 'Data limit set: ' + size + ' ' + unit : 'Data limit disabled');
+    await loadSettings();
+  } catch (e) {
+    setStatus('limStatus', 'Failed: ' + e.message, 'bad');
+  } finally {
+    setBusy(btn, false);
+  }
+}
+
+function renderNetworks(networks) {
+  const el = $('netList');
+  if (!networks || !networks.length) { el.innerHTML = '<div class="empty">No networks returned.</div>'; return; }
+  el.innerHTML = networks.map((n) => {
+    const isCurrent = n.state === 2;
+    return '<div class="netRow' + (isCurrent ? ' current' : '') + '">' +
+      '<div class="nm"><b>' + esc(n.name || n.numeric) + '</b><span>' + esc(n.numeric) + ' · ' + esc(n.status) + '</span></div>' +
+      '<span class="tech' + (n.rat === 7 ? ' lte' : '') + '">' + esc(n.ratName) + '</span>' +
+      (isCurrent
+        ? '<span class="chip good">current</span>'
+        : '<button data-num="' + esc(n.numeric) + '" data-rat="' + n.rat + '" data-name="' + esc(n.name) + '">Use</button>') +
+      '</div>';
+  }).join('');
+  el.querySelectorAll('button[data-num]').forEach((b) => {
+    b.addEventListener('click', () => selectOperator(b.dataset.num, Number(b.dataset.rat), b.dataset.name));
+  });
+}
+
+async function scanNetworks() {
+  if (netScanBusy) return;
+  netScanBusy = true;
+  const btn = $('scanBtn');
+  setBusy(btn, true, 'Scanning…');
+  $('netList').innerHTML = '<div class="empty">Scanning… this can take up to 60 s.</div>';
+  setStatus('netStatus', 'Scanning for operators…', 'warn');
+  try {
+    const j = await postJson('/api/scan', {});
+    renderNetworks(j.networks);
+    setStatus('netStatus', j.networks.length ? 'Found ' + j.networks.length + ' networks' : 'No networks returned', j.networks.length ? 'good' : 'warn');
+    addEvent('good', 'Network scan: ' + j.networks.length + ' networks');
+  } catch (e) {
+    $('netList').innerHTML = '<div class="empty">Scan failed.</div>';
+    setStatus('netStatus', 'Scan failed: ' + e.message, 'bad');
+    addEvent('bad', 'Network scan failed: ' + e.message);
+  } finally {
+    netScanBusy = false;
+    setBusy(btn, false);
+  }
+}
+
+async function selectOperator(numeric, rat, name) {
+  const tech = rat === 7 ? '4G' : rat === 2 ? '3G' : '2G';
+  if (!confirm('Register on ' + name + ' (' + numeric + ', ' + tech + ')?\n\nThe link may drop while the router registers.')) return;
+  setStatus('netStatus', 'Registering on ' + name + '…', 'warn');
+  addEvent('warn', 'Manual operator → ' + name);
+  try {
+    const j = await postJson('/api/operator', { numeric, rat });
+    setStatus('netStatus', j.success ? 'Registered on ' + name : 'Registration failed (' + (j.result || 'no result') + ')', j.success ? 'good' : 'bad');
+    addEvent(j.success ? 'good' : 'bad', 'Operator ' + name + (j.success ? ' selected' : ' failed'));
+    await loadSettings();
+    await tick();
+  } catch (e) {
+    setStatus('netStatus', 'Operator change failed: ' + e.message, 'bad');
+  }
+}
+
+async function setAutoOperator() {
+  if (!confirm('Return to automatic operator selection?')) return;
+  setStatus('netStatus', 'Switching to automatic…', 'warn');
+  addEvent('warn', 'Operator → automatic');
+  try {
+    await postJson('/api/operator', { auto: true });
+    setStatus('netStatus', 'Automatic operator selection enabled', 'good');
+    addEvent('good', 'Operator set to automatic');
+    await loadSettings();
+    await tick();
+  } catch (e) {
+    setStatus('netStatus', 'Auto operator failed: ' + e.message, 'bad');
+  }
+}
+
+async function blockClient(mac, host, ip) {
+  if (!mac) return;
+  if (!confirm('Block ' + (host || mac) + ' from WiFi?')) return;
+  try {
+    await postJson('/api/mac', { action: 'block', mac, host, ip });
+    addEvent('warn', 'Blocked ' + (host || mac));
+    await loadSettings();
+    await loadClients();
+  } catch (e) {
+    addEvent('bad', 'Block failed: ' + e.message);
+  }
+}
+
+async function unblockMac(mac) {
+  try {
+    await postJson('/api/mac', { action: 'unblock', mac });
+    addEvent('good', 'Unblocked ' + mac);
+    await loadSettings();
+    await loadClients();
+  } catch (e) {
+    addEvent('bad', 'Unblock failed: ' + e.message);
+  }
+}
+
+async function clearBlocks() {
+  if (!settings || !settings.mac.blacklist.length) return;
+  if (!confirm('Remove every device from the block list?')) return;
+  try {
+    await postJson('/api/mac', { action: 'clear' });
+    addEvent('good', 'Block list cleared');
+    await loadSettings();
+    await loadClients();
+  } catch (e) {
+    addEvent('bad', 'Clear failed: ' + e.message);
+  }
+}
+
+async function loadReport() {
+  try {
+    const res = await fetch('/api/report?days=7', { cache: 'no-store' });
+    const j = await res.json();
+    if (!j.ok) throw new Error(j.error || 'failed');
+    lastReport = j;
+    renderReport(j);
+  } catch (e) {
+    setStatus('maintStatus', 'Report failed: ' + e.message, 'bad');
+  }
+}
+
+function renderReport(j) {
+  const t = j.totals || {};
+  $('repUptime').textContent = t.uptimePct != null ? t.uptimePct + '%' : '—';
+  $('repWan').textContent = 'avg WAN ' + (t.avgWan != null ? t.avgWan + ' ms' : '—');
+  $('repLoss').textContent = 'loss ' + (t.lossPct != null ? t.lossPct + '%' : '—');
+  const el = $('reportBars');
+  const days = j.daily || [];
+  if (!days.length) {
+    el.innerHTML = '<div class="empty" style="grid-column:1/-1">Collecting samples…</div>';
+    setStatus('maintStatus', 'No samples yet — the report fills in over time.', 'warn');
+    return;
+  }
+  el.innerHTML = days.slice(-7).map((d) => {
+    const pct = d.uptimePct == null ? 0 : Math.max(3, Math.min(100, d.uptimePct));
+    const cls = pct < 90 ? 'bad' : pct < 98 ? 'low' : '';
+    return '<div class="rb ' + cls + '" title="' + esc(d.date) + ' · ' + (d.uptimePct == null ? '—' : d.uptimePct + '%') + '">' +
+      '<i style="height:' + pct + '%"></i><span>' + esc(d.date.slice(5)) + '</span></div>';
+  }).join('');
+  setStatus('maintStatus', days.length + ' day' + (days.length === 1 ? '' : 's') + ' of samples', 'good');
+}
+
+function downloadReportCsv() {
+  if (!lastReport) { setStatus('maintStatus', 'Load the report first', 'warn'); return; }
+  const rows = [['date', 'samples', 'uptime_pct', 'avg_wan_ms', 'loss_pct', 'avg_rsrp_dbm']];
+  for (const d of lastReport.daily || []) {
+    rows.push([d.date, d.samples, d.uptimePct, d.avgWan, d.lossPct, d.avgRsrp]);
+  }
+  const csv = rows.map((r) => r.join(',')).join('\r\n');
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'zte-availability-' + new Date().toISOString().slice(0, 10) + '.csv';
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+  addEvent('good', 'Availability report exported');
+}
+
+async function rebootRouter() {
+  if (!confirm('Reboot the router?\n\nInternet and WiFi will be down for 1–2 minutes.')) return;
+  const typed = prompt('Type REBOOT to confirm.');
+  if (typed !== 'REBOOT') { setStatus('maintStatus', 'Reboot cancelled', 'warn'); return; }
+  const btn = $('rebootBtn');
+  setBusy(btn, true, 'Rebooting…');
+  setStatus('maintStatus', 'Router is rebooting… waiting for it to come back.', 'warn');
+  addEvent('warn', 'Router reboot requested');
+  try { await postJson('/api/reboot', { confirm: 'REBOOT' }); } catch (_) { /* router drops the reply */ }
+  let back = false;
+  for (let i = 0; i < 30; i++) {
+    await new Promise((r) => setTimeout(r, 5000));
+    try {
+      const res = await fetch('/api/status', { cache: 'no-store' });
+      const j = await res.json();
+      if (j.ok) { back = true; break; }
+    } catch (_) { /* still down */ }
+    setStatus('maintStatus', 'Waiting for router… ' + ((i + 1) * 5) + 's', 'warn');
+  }
+  setStatus('maintStatus', back ? 'Router is back online' : 'Router has not answered yet — check it manually', back ? 'good' : 'bad');
+  addEvent(back ? 'good' : 'bad', back ? 'Router rebooted and is online' : 'Router did not come back');
+  setBusy(btn, false);
+  if (back) { await tick(); await loadSettings(); }
+}
+
+async function installApp() {
+  if (!deferredInstall) {
+    setStatus('maintStatus', 'Use the browser menu → “Install app” (needs localhost or HTTPS).', 'warn');
+    return;
+  }
+  deferredInstall.prompt();
+  try { await deferredInstall.userChoice; } catch (_) { /* ignore */ }
+  deferredInstall = null;
+  $('installBtn').hidden = true;
+  $('installBtn2').hidden = true;
+  addEvent('good', 'App installed');
+}
+
+/* ---------- PWA ---------- */
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferredInstall = e;
+  $('installBtn').hidden = false;
+  $('installBtn2').hidden = false;
+});
+window.addEventListener('appinstalled', () => {
+  $('installBtn').hidden = true;
+  $('installBtn2').hidden = true;
+  addEvent('good', 'App installed');
+});
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/service-worker.js').catch(() => {});
+}
+
+/* ---------- activity log ---------- */
+function saveEvents() {
+  try { localStorage.setItem('events', JSON.stringify(events.slice(0, 50))); } catch (_) {}
+}
+function addEvent(kind, text) {
+  events.unshift({ ts: Date.now(), kind, text });
+  events = events.slice(0, 50);
+  saveEvents();
+  renderEvents();
+}
+function renderEvents() {
+  const el = $('activityList');
+  if (!el) return;
+  if (!events.length) { el.innerHTML = '<div class="actEmpty">No events yet.</div>'; return; }
+  el.innerHTML = events.slice(0, 20).map((e) => {
+    const t = new Date(e.ts).toLocaleTimeString();
+    return '<div class="actRow"><span class="actDot ' + esc(e.kind) + '"></span>' +
+      '<div class="actBody"><b>' + esc(e.text) + '</b><span>' + t + '</span></div></div>';
+  }).join('');
+}
+
+/* ---------- notifications ---------- */
+function notify(title, body) {
+  if (!alertsEnabled) return;
+  try {
+    if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
+      new Notification(title, { body, tag: title });
+    }
+  } catch (_) {}
+}
+function updateAlertsBtn() {
+  const b = $('alertsBtn');
+  if (!b) return;
+  b.textContent = 'Alerts: ' + (alertsEnabled ? 'on' : 'off');
+  b.classList.toggle('on', alertsEnabled);
+}
+async function toggleAlerts() {
+  if (alertsEnabled) {
+    alertsEnabled = false;
+    localStorage.setItem('alerts', '0');
+    updateAlertsBtn();
+    addEvent('warn', 'Alerts disabled');
+    return;
+  }
+  try {
+    const p = await Notification.requestPermission();
+    if (p === 'granted') {
+      alertsEnabled = true;
+      localStorage.setItem('alerts', '1');
+      updateAlertsBtn();
+      addEvent('good', 'Alerts enabled');
+      notify('Alerts enabled', 'You will be notified when the link drops or DNS fails.');
+    } else {
+      addEvent('bad', 'Notification permission denied');
+    }
+  } catch (e) {
+    addEvent('bad', 'Alerts unavailable: ' + e.message);
+  }
+}
+
+/* ---------- favicon ---------- */
+function setFavicon(color) {
+  const link = $('favicon');
+  if (!link) return;
+  const svg = "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><circle cx='16' cy='16' r='12' fill='" + color + "'/></svg>";
+  link.href = 'data:image/svg+xml,' + encodeURIComponent(svg);
+}
+
+/* ---------- speed history ---------- */
+function saveSpeedHistory() {
+  try { localStorage.setItem('speedHistory', JSON.stringify(speedHistory.slice(0, 20))); } catch (_) {}
+}
+function renderSpeedHistory() {
+  const el = $('speedHist');
+  if (!el) return;
+  if (!speedHistory.length) { el.innerHTML = ''; return; }
+  const max = Math.max(1, ...speedHistory.map((s) => s.mbps));
+  el.innerHTML = speedHistory.slice(0, 5).map((s) => {
+    const t = new Date(s.ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const pct = Math.max(4, Math.min(100, (s.mbps / max) * 100));
+    return '<div class="shRow"><span class="t">' + t + '</span>' +
+      '<div class="shBar"><i style="width:' + pct.toFixed(1) + '%"></i></div>' +
+      '<b>' + Number(s.mbps).toFixed(1) + '</b></div>';
+  }).join('');
+}
+
+/* ---------- csv export ---------- */
+function exportCsv() {
+  const rows = [['time', 'down_mbps', 'up_mbps', 'rsrp_dbm', 'rsrq_db']];
+  for (let i = 0; i < histTs.length; i++) {
+    rows.push([
+      new Date(histTs[i]).toISOString(),
+      fmtMbps(histDown[i]),
+      fmtMbps(histUp[i]),
+      histRsrp[i] == null ? '' : histRsrp[i],
+      histRsrq[i] == null ? '' : histRsrq[i],
+    ]);
+  }
+  const csv = rows.map((r) => r.join(',')).join('\r\n');
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'zte-mf253v-' + new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-') + '.csv';
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+  addEvent('good', 'Exported CSV (' + (rows.length - 1) + ' rows)');
+}
+
+/* ---------- latency ---------- */
+async function loadLatency() {
+  try {
+    const res = await fetch('/api/latency', { cache: 'no-store' });
+    const j = await res.json();
+    if (!j.ok) return;
+    latSamples = j.samples || { lan: [], wan: [] };
+    renderLatency(j);
+    drawLatency();
+  } catch (_) {}
+}
+
+/* ---------- rolling data usage ---------- */
+async function loadUsage() {
+  try {
+    const res = await fetch('/api/usage', { cache: 'no-store' });
+    const j = await res.json();
+    if (!j.ok) return;
+    renderUsageWindow(j.day, 'day');
+    renderUsageWindow(j.week, 'week');
+  } catch (_) {}
+}
+function renderUsageWindow(w, key) {
+  if (!w) return;
+  const totalEl = $(key + 'Usage');
+  const el = $(key + 'Split');
+  if (!w.from) {
+    totalEl.textContent = '—';
+    el.textContent = 'no samples yet';
+    el.title = 'No byte samples recorded for this window yet';
+    return;
+  }
+  totalEl.textContent = fmtBytes(w.total);
+  el.textContent = '↓ ' + fmtBytes(w.rx) + ' · ↑ ' + fmtBytes(w.tx) + (w.complete ? '' : ' · partial');
+  el.title = w.complete
+    ? 'Complete window'
+    : 'Partial: the dashboard has not recorded the full window yet';
+}
+function renderLatency(j) {
+  const lan = j.lan, wan = j.wan;
+  $('lanMs').innerHTML = (lan.last != null ? lan.last : '—') + '<small> ms</small>';
+  $('wanMs').innerHTML = (wan.last != null ? wan.last : '—') + '<small> ms</small>';
+  $('lanLoss').textContent = lan.loss + '% loss';
+  $('wanLoss').textContent = wan.loss + '% loss';
+  $('lanSub').textContent = 'avg ' + (lan.avg != null ? lan.avg : '—') + ' ms · max ' + (lan.max != null ? lan.max : '—') + ' ms';
+  $('wanSub').textContent = 'avg ' + (wan.avg != null ? wan.avg : '—') + ' ms · max ' + (wan.max != null ? wan.max : '—') + ' ms';
+  const ok = wan.avg != null && wan.loss < 20;
+  const chip = $('latChip');
+  chip.textContent = ok ? 'stable' : 'unstable';
+  chip.className = 'chip ' + (ok ? 'good' : 'bad');
+  $('latAvg').textContent = 'WAN avg ' + (wan.avg != null ? wan.avg : '—') + ' ms';
+}
+function drawLatency() {
+  const c = $('latChart');
+  if (!c) return;
+  const { ctx, w, h } = setupCanvas(c, 92);
+  const col = chartColors();
+  grid(ctx, w, h, col.line);
+  const lan = latSamples.lan || [];
+  const wan = latSamples.wan || [];
+  const all = [...lan, ...wan].map((s) => s.ms).filter((v) => v != null);
+  const max = Math.max(50, ...all);
+  function line(arr, color) {
+    if (arr.length < 2) return;
+    const n = arr.length;
+    const x = (i) => (i / (n - 1)) * (w - 2) + 1;
+    const y = (v) => h - 3 - (v / max) * (h - 14);
+    let started = false;
+    ctx.beginPath();
+    arr.forEach((s, i) => {
+      if (s.ms == null) { started = false; return; }
+      if (!started) { ctx.moveTo(x(i), y(s.ms)); started = true; }
+      else ctx.lineTo(x(i), y(s.ms));
+    });
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 2;
+    ctx.lineJoin = 'round';
+    ctx.stroke();
+  }
+  line(wan, col.accent2);
+  line(lan, col.accent);
+  ctx.fillStyle = col.muted;
+  ctx.font = '11px ui-sans-serif, system-ui, sans-serif';
+  ctx.fillText(max + ' ms', 6, 13);
+}
+
+/* ---------- score ---------- */
+function scoreOf(d) {
+  const rsrp = Number(d.lte_rsrp);
+  const rsrq = Number(d.lte_rsrq);
+  const bars = Number(d.signalbar) || 0;
+  const linked = d.ppp_status === 'ppp_connected';
+
+  let rsrpScore = 0;
+  if (isFinite(rsrp) && rsrp) {
+    if (rsrp >= -70) rsrpScore = 55;
+    else if (rsrp >= -80) rsrpScore = 48 + (rsrp + 80) * 0.7;
+    else if (rsrp >= -90) rsrpScore = 38 + (rsrp + 90) * 1.0;
+    else if (rsrp >= -100) rsrpScore = 25 + (rsrp + 100) * 1.3;
+    else if (rsrp >= -110) rsrpScore = 10 + (rsrp + 110) * 1.5;
+    else rsrpScore = Math.max(0, 10 + (rsrp + 110) * 1.5);
+  }
+
+  let rsrqScore = 0;
+  if (isFinite(rsrq) && rsrq) {
+    if (rsrq >= -5) rsrqScore = 25;
+    else if (rsrq >= -10) rsrqScore = 20 + (rsrq + 10) * 1.0;
+    else if (rsrq >= -15) rsrqScore = 12 + (rsrq + 15) * 1.6;
+    else if (rsrq >= -20) rsrqScore = 5 + (rsrq + 20) * 1.4;
+    else rsrqScore = Math.max(0, 5 + (rsrq + 20) * 1.4);
+  }
+
+  const barsScore = Math.min(5, Math.max(0, bars)) * 2;
+  const linkScore = linked ? 10 : 0;
+  return Math.round(Math.min(100, rsrpScore + rsrqScore + barsScore + linkScore));
+}
+
+function scoreInfo(score) {
+  if (score >= 85) return { label: 'Excellent', cls: 'good' };
+  if (score >= 70) return { label: 'Good', cls: 'good' };
+  if (score >= 50) return { label: 'Fair', cls: 'warn' };
+  if (score >= 30) return { label: 'Poor', cls: 'bad' };
+  return { label: 'Very poor', cls: 'bad' };
+}
+
+/* ---------- render ---------- */
+function render(d) {
+  lastStatus = d;
+
+  const bars = Math.max(0, Math.min(5, Number(d.signalbar) || 0));
+  document.querySelectorAll('#bars i').forEach((el, i) => el.classList.toggle('on', i < bars));
+
+  const q = qualityOf(d.lte_rsrp);
+  const qEl = $('quality');
+  qEl.textContent = q.label;
+  qEl.className = 'chip ' + q.cls;
+
+  $('s_rsrp').textContent = d.lte_rsrp ? d.lte_rsrp + ' dBm' : '—';
+  $('s_rsrq').textContent = d.lte_rsrq ? d.lte_rsrq + ' dB' : '—';
+  $('s_bars').textContent = bars + '/5';
+  $('sigRsrp').textContent = d.lte_rsrp ? d.lte_rsrp + ' dBm' : '—';
+  $('sigRsrq').textContent = d.lte_rsrq ? d.lte_rsrq + ' dB' : '—';
+
+  const pci = d.lte_pci ? parseInt(d.lte_pci, 16) : null;
+  $('pci').textContent = d.lte_pci ? '0x' + String(d.lte_pci).toUpperCase() + (isFinite(pci) ? ' (' + pci + ')' : '') : '—';
+  $('earfcn').textContent = d.wan_active_channel || '—';
+  $('rssi').textContent = d.lte_rssi ? d.lte_rssi + ' dBm' : '—';
+  $('bandShort').textContent = d.wan_active_band || (d.lte_band ? 'B' + d.lte_band : '—');
+
+  const score = scoreOf(d);
+  const si = scoreInfo(score);
+  const ring = $('ringBar');
+  const C = 2 * Math.PI * 42;
+  ring.style.strokeDasharray = C.toFixed(2);
+  ring.style.strokeDashoffset = (C * (1 - score / 100)).toFixed(2);
+  ring.style.stroke = score >= 70 ? 'var(--good)' : score >= 50 ? 'var(--warn)' : 'var(--bad)';
+  $('score').textContent = score;
+  $('scoreLabel').textContent = si.label;
+  $('scoreLabel').style.color = score >= 70 ? 'var(--good)' : score >= 50 ? 'var(--warn)' : 'var(--bad)';
+
+  const linked = d.ppp_status === 'ppp_connected';
+  const linkChip = $('linkChip');
+  linkChip.textContent = linked ? 'Online' : prettyPpp(d.ppp_status);
+  linkChip.className = 'chip ' + (linked ? 'good' : 'bad');
+
+  $('operator').textContent = d.network_provider || '—';
+  const band = d.wan_active_band || (d.lte_band ? 'Band ' + d.lte_band : '');
+  $('band').textContent = (d.network_type || '—') + (band ? ' · ' + band : '');
+  $('wanip').textContent = d.wan_ipaddr || '—';
+  $('gateway').textContent = d.wan_gateway || '—';
+  $('netmask').textContent = d.wan_netmask || '—';
+  $('dialfail').textContent = d.ppp_dial_conn_fail_counter || '0';
+  $('session').textContent = fmtMinutes(d.monthly_time);
+  $('pin').textContent = String(d.pin_status) === '0' ? 'Unlocked' : (d.pin_status || '—');
+  const netChip = $('netChip');
+  netChip.textContent = d.wan_connect_status ? String(d.wan_connect_status).replace(/_/g, ' ') : prettyPpp(d.ppp_status);
+  netChip.className = 'chip ' + (linked ? 'good' : 'bad');
+
+  const down = Number(d.realtime_rx_thrpt) || 0;
+  const up = Number(d.realtime_tx_thrpt) || 0;
+  $('down').textContent = fmtMbps(down);
+  $('up').textContent = fmtMbps(up);
+
+  histDown.push(down); if (histDown.length > HIST) histDown.shift();
+  histUp.push(up); if (histUp.length > HIST) histUp.shift();
+  histRsrp.push(Number(d.lte_rsrp) || null); if (histRsrp.length > HIST) histRsrp.shift();
+  histRsrq.push(Number(d.lte_rsrq) || null); if (histRsrq.length > HIST) histRsrq.shift();
+  histTs.push(Date.now()); if (histTs.length > HIST) histTs.shift();
+
+  const peak = Math.max(0, ...histDown, ...histUp);
+  $('peakChip').textContent = 'peak ' + fmtMbps(peak) + ' Mbps';
+  const n = histDown.length;
+  const avgD = n ? histDown.reduce((a, b) => a + b, 0) / n : 0;
+  $('avgChip').textContent = 'avg ↓ ' + fmtMbps(avgD) + ' Mbps';
+
+  drawThroughput();
+  drawSignal();
+
+  const rx = Number(d.monthly_rx_bytes) || 0;
+  const tx = Number(d.monthly_tx_bytes) || 0;
+  $('total').textContent = fmtBytes(rx + tx);
+  $('rx').textContent = fmtBytes(rx);
+  $('tx').textContent = fmtBytes(tx);
+  $('cycle').textContent = fmtDate(d.date_month);
+  $('cycleChip').textContent = 'resets ' + fmtDate(d.date_month);
+  $('sessRx').textContent = fmtBytes(d.realtime_rx_bytes);
+  $('sessTx').textContent = fmtBytes(d.realtime_tx_bytes);
+
+  const limOn = String(d.data_volume_limit_switch) === '1';
+  if (limOn) {
+    $('limitWrap').style.display = 'block';
+    const size = Number(d.data_volume_limit_size) || 0;
+    const unit = d.data_volume_limit_unit || '';
+    const used = rx + tx;
+    const pct = size > 0 ? Math.min(100, (used / size) * 100) : 0;
+    $('limitBar').style.width = pct.toFixed(1) + '%';
+    $('limitText').textContent = fmtBytes(used) + ' / ' + fmtBytes(size) + ' ' + unit + ' · ' + pct.toFixed(0) + '%';
+  } else {
+    $('limitWrap').style.display = 'none';
+  }
+
+  $('ssid').textContent = d.SSID1 || '—';
+  const wifiOn = String(d.RadioOff) === '1';
+  const wifiState = $('wifiState');
+  wifiState.textContent = wifiOn ? 'ON' : 'OFF';
+  wifiState.className = 'chip ' + (wifiOn ? 'good' : 'bad');
+  $('security').textContent = (d.AuthMode || '—') + (d.EncrypType ? ' / ' + d.EncrypType : '');
+  $('channel').textContent = d.Channel && String(d.Channel) !== '0' ? 'Ch ' + d.Channel : 'Auto';
+  const wb = d.wifi_band === 'b' ? '2.4 GHz' : d.wifi_band === 'a' ? '5 GHz' : '';
+  $('wifiSub').textContent = (wb ? wb + ' · ' : '') + (d.station_num || '0') + ' device' + (String(d.station_num) === '1' ? '' : 's') + ' connected';
+
+  $('model').textContent = d.device_name || 'ZTE MF253V';
+  $('fw').textContent = d.wa_inner_version || '—';
+  $('web').textContent = d.web_version || '—';
+  $('hw').textContent = d.hardware_version || '—';
+  $('imei').textContent = d.imei || '—';
+  const sim = [d.modem_main_state, d.simcard_roam ? '(' + d.simcard_roam + ')' : ''].filter(Boolean).join(' ');
+  $('sim').textContent = sim || '—';
+
+  $('subline').textContent = [d.network_provider, d.network_type, d.wan_active_band, d.wan_ipaddr].filter(Boolean).join(' · ');
+
+  // control tab live state
+  updateConnState(d.ppp_status);
+  if ($('connIp')) $('connIp').textContent = d.wan_ipaddr || '—';
+  if ($('connGw')) $('connGw').textContent = d.wan_gateway || '—';
+  if (!wifiBusy) {
+    const wifiOnNow = String(d.RadioOff) === '1';
+    $('wifiCtrlState').textContent = wifiOnNow ? 'ON' : 'OFF';
+    $('wifiCtrlState').className = 'chip ' + (wifiOnNow ? 'good' : 'bad');
+    $('wifiToggle').textContent = wifiOnNow ? 'Turn off' : 'Turn on';
+  }
+
+  const activeBand = String(d.wan_active_band || '').match(/BAND\s*(\d+)/i);
+  const activeKey = activeBand ? 'b' + activeBand[1] : '';
+  document.querySelectorAll('.bandBtn').forEach((b) => b.classList.toggle('active', b.dataset.band === activeKey));
+
+  // live tab title + favicon
+  document.title = (linked ? '↓ ' + fmtMbps(down) + ' Mbps' : 'Offline') + ' · ZTE MF253V';
+  setFavicon(!linked ? '#ef4444' : score >= 50 ? '#22c55e' : '#f59e0b');
+
+  // link transitions
+  if (prevLinked !== null && prevLinked !== linked) {
+    if (linked) { addEvent('good', 'Connection restored'); notify('4G connected', 'The mobile link is back up.'); }
+    else { addEvent('bad', 'Connection lost'); notify('4G disconnected', 'The mobile link went down.'); }
+  }
+  prevLinked = linked;
+
+  // weak-signal threshold
+  const rsrpNum = Number(d.lte_rsrp);
+  const signalBad = isFinite(rsrpNum) && rsrpNum !== 0 && rsrpNum < -105;
+  if (signalBad !== prevSignalBad) {
+    addEvent(signalBad ? 'warn' : 'good', signalBad ? 'Signal dropped below -105 dBm' : 'Signal recovered above -105 dBm');
+    if (signalBad) notify('Weak signal', 'RSRP is below -105 dBm.');
+    prevSignalBad = signalBad;
+  }
+}
+
+/* ---------- charts ---------- */
+function chartColors() {
+  const cs = getComputedStyle(document.documentElement);
+  const g = (n, f) => (cs.getPropertyValue(n).trim() || f);
+  return {
+    line: g('--line', '#1e2a38'),
+    muted: g('--muted', '#8b9bb0'),
+    accent: g('--accent', '#25d0b1'),
+    accent2: g('--accent-2', '#56b8ff'),
+  };
+}
+function setupCanvas(c, h) {
+  const dpr = window.devicePixelRatio || 1;
+  const w = c.clientWidth || 600;
+  const W = Math.round(w * dpr), H = Math.round(h * dpr);
+  if (c.width !== W || c.height !== H) { c.width = W; c.height = H; }
+  const ctx = c.getContext('2d');
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.clearRect(0, 0, w, h);
+  return { ctx, w, h };
+}
+function grid(ctx, w, h, color) {
+  ctx.strokeStyle = color;
+  ctx.globalAlpha = 0.55;
+  ctx.lineWidth = 1;
+  for (let i = 1; i < 4; i++) {
+    const y = (h / 4) * i + 0.5;
+    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke();
+  }
+  ctx.globalAlpha = 1;
+}
+function drawThroughput() {
+  const c = $('chart');
+  if (!c) return;
+  const { ctx, w, h } = setupCanvas(c, 92);
+  const col = chartColors();
+  grid(ctx, w, h, col.line);
+
+  const max = Math.max(1, ...histDown, ...histUp);
+  function line(arr, color, fill) {
+    if (arr.length < 2) return;
+    const n = arr.length;
+    const x = (i) => (i / (n - 1)) * (w - 2) + 1;
+    const y = (v) => h - 3 - (v / max) * (h - 14);
+
+    ctx.beginPath();
+    arr.forEach((v, i) => { i ? ctx.lineTo(x(i), y(v)) : ctx.moveTo(x(i), y(v)); });
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 2;
+    ctx.lineJoin = 'round';
+    ctx.stroke();
+
+    ctx.lineTo(x(n - 1), h);
+    ctx.lineTo(x(0), h);
+    ctx.closePath();
+    const g = ctx.createLinearGradient(0, 0, 0, h);
+    g.addColorStop(0, fill);
+    g.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = g;
+    ctx.fill();
+  }
+  line(histDown, col.accent, 'rgba(37,208,177,.22)');
+  line(histUp, col.accent2, 'rgba(86,184,255,.16)');
+
+  ctx.fillStyle = col.muted;
+  ctx.font = '11px ui-sans-serif, system-ui, sans-serif';
+  ctx.fillText(fmtMbps(max) + ' Mbps', 6, 13);
+}
+function drawSignal() {
+  const c = $('signalChart');
+  if (!c) return;
+  const { ctx, w, h } = setupCanvas(c, 92);
+  const col = chartColors();
+  grid(ctx, w, h, col.line);
+
+  const yR = (v) => h - 3 - ((Math.max(-120, Math.min(-40, v)) + 120) / 80) * (h - 14);
+  const yQ = (v) => h - 3 - ((Math.max(-20, Math.min(0, v)) + 20) / 20) * (h - 14);
+
+  function line(arr, yFn, color, width) {
+    const pts = arr.map((v, i) => ({ i, v })).filter((p) => p.v != null && isFinite(p.v));
+    if (pts.length < 2) return;
+    const x = (i) => (i / (arr.length - 1)) * (w - 2) + 1;
+    ctx.beginPath();
+    pts.forEach((p, k) => { k ? ctx.lineTo(x(p.i), yFn(p.v)) : ctx.moveTo(x(p.i), yFn(p.v)); });
+    ctx.strokeStyle = color;
+    ctx.lineWidth = width;
+    ctx.lineJoin = 'round';
+    ctx.stroke();
+  }
+  line(histRsrq, yQ, col.accent2, 1.5);
+  line(histRsrp, yR, col.accent, 2);
+
+  ctx.fillStyle = col.muted;
+  ctx.font = '11px ui-sans-serif, system-ui, sans-serif';
+  ctx.fillText('RSRP −120…−40 dBm', 6, 13);
+}
+
+/* ---------- diagnostics ---------- */
+function setPill(el, cls, text) {
+  el.className = 'pill ' + cls;
+  el.textContent = text;
+}
+function renderDiag(j) {
+  const dnsCls = j.dns.ok ? (j.dns.ms < 300 ? 'good' : j.dns.ms < 1000 ? 'warn' : 'bad') : 'bad';
+  setPill($('dnsPill'), dnsCls, j.dns.ok ? 'OK' : 'FAIL');
+  $('dnsMs').textContent = j.dns.ok ? j.dns.ms + ' ms' + (j.dns.addrs && j.dns.addrs[0] ? ' · ' + j.dns.addrs[0] : '') : (j.dns.error || 'failed');
+
+  const tcpCls = j.tcp.ok ? (j.tcp.min < 120 ? 'good' : j.tcp.min < 400 ? 'warn' : 'bad') : 'bad';
+  setPill($('tcpPill'), tcpCls, j.tcp.ok ? 'OK' : 'FAIL');
+  $('tcpMs').textContent = j.tcp.ok ? j.tcp.min + ' ms (avg ' + j.tcp.avg + ')' : 'unreachable';
+
+  const httpCls = j.http.ok ? (j.http.ms < 400 ? 'good' : j.http.ms < 1200 ? 'warn' : 'bad') : 'bad';
+  setPill($('httpPill'), httpCls, j.http.ok ? 'OK' : 'FAIL');
+  $('httpMs').textContent = j.http.ok ? j.http.ms + ' ms' : (j.http.error || 'failed');
+
+  const allOk = j.dns.ok && j.tcp.ok && j.http.ok;
+  const chip = $('diagChip');
+  chip.textContent = allOk ? 'healthy' : 'issue';
+  chip.className = 'chip ' + (allOk ? 'good' : 'bad');
+  chip.title = 'checked ' + new Date(j.ts || Date.now()).toLocaleTimeString();
+
+  if (prevDnsOk !== null && prevDnsOk !== j.dns.ok) {
+    if (j.dns.ok) { addEvent('good', 'DNS recovered'); notify('DNS recovered', 'Domain lookups are working again.'); }
+    else { addEvent('bad', 'DNS failed'); notify('DNS failure', 'Domain lookups are failing.'); }
+  }
+  prevDnsOk = j.dns.ok;
+}
+async function runDiag() {
+  if (diagRunning) return;
+  diagRunning = true;
+  const btn = $('diagBtn');
+  btn.disabled = true;
+  btn.textContent = 'Checking…';
+  try {
+    const res = await fetch('/api/diag', { cache: 'no-store' });
+    const j = await res.json();
+    if (!j.ok) throw new Error(j.error || 'failed');
+    renderDiag(j);
+  } catch (e) {
+    setPill($('dnsPill'), 'bad', 'ERR');
+    setPill($('tcpPill'), 'bad', 'ERR');
+    setPill($('httpPill'), 'bad', 'ERR');
+    $('diagChip').textContent = 'error';
+    $('diagChip').className = 'chip bad';
+  } finally {
+    diagRunning = false;
+    btn.disabled = false;
+    btn.textContent = 'Run diagnostics';
+  }
+}
+
+/* ---------- speed test ---------- */
+async function speedTest() {
+  if (speedRunning) return;
+  speedRunning = true;
+  const btn = $('speedBtn');
+  btn.disabled = true;
+  btn.textContent = 'Testing…';
+  $('speedResult').textContent = 'Downloading 10 MB…';
+  $('speedBar').classList.add('running');
+  try {
+    const res = await fetch('/api/speedtest?bytes=10000000', { cache: 'no-store' });
+    const j = await res.json();
+    if (!j.ok) throw new Error(j.error || 'failed');
+    $('speedResult').innerHTML = '<b>' + j.mbps + ' Mbps</b> · ' + j.mbPerSec + ' MB/s · ' +
+      Math.round(j.bytes / 1e6) + ' MB in ' + j.seconds + 's';
+    speedHistory.unshift({ ts: Date.now(), mbps: j.mbps, mbPerSec: j.mbPerSec, bytes: j.bytes, seconds: j.seconds });
+    speedHistory = speedHistory.slice(0, 20);
+    saveSpeedHistory();
+    renderSpeedHistory();
+    addEvent('good', 'Speed test: ' + j.mbps + ' Mbps');
+  } catch (e) {
+    $('speedResult').textContent = 'Speed test failed: ' + e.message;
+    addEvent('bad', 'Speed test failed: ' + e.message);
+  } finally {
+    speedRunning = false;
+    btn.disabled = false;
+    btn.textContent = 'Speed test';
+    $('speedBar').classList.remove('running');
+  }
+}
+
+/* ---------- controls ---------- */
+function setCtrl(msg, cls) {
+  const el = $('ctrlStatus');
+  el.textContent = msg;
+  el.className = 'ctrlStatus' + (cls ? ' ' + cls : '');
+}
+async function applyBand(key) {
+  const label = BAND_LABELS[key] || key;
+  if (!confirm('Switch to ' + label + '?\n\nThe mobile connection will drop for 10–30 seconds.')) return;
+  addEvent('warn', 'Band change → ' + label);
+  const btns = Array.from(document.querySelectorAll('.bandBtn'));
+  btns.forEach((b) => (b.disabled = true));
+  $('ctrlChip').textContent = 'working';
+  $('ctrlChip').className = 'chip warn';
+  setCtrl('Applying ' + label + '… this can take ~30 s', 'warn');
+  try {
+    const res = await fetch('/api/band', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ band: key }),
+    });
+    const j = await res.json();
+    if (!j.ok) throw new Error(j.error || 'failed');
+    if (j.connected) {
+      setCtrl('Connected on ' + label + (j.status && j.status.wan_active_band ? ' · ' + j.status.wan_active_band : ''), 'good');
+    } else {
+      setCtrl('No connection on ' + label + '. Pick another band or Auto.', 'bad');
+    }
+    addEvent(j.connected ? 'good' : 'bad', 'Band ' + label + (j.connected ? ' connected' : ' no connection'));
+    $('ctrlChip').textContent = 'live';
+    $('ctrlChip').className = 'chip';
+    await tick();
+  } catch (e) {
+    setCtrl('Band change failed: ' + e.message, 'bad');
+    addEvent('bad', 'Band change failed: ' + e.message);
+    $('ctrlChip').textContent = 'error';
+    $('ctrlChip').className = 'chip bad';
+  } finally {
+    btns.forEach((b) => (b.disabled = false));
+  }
+}
+async function doReconnect() {
+  if (!confirm('Reconnect the mobile data session?')) return;
+  addEvent('warn', 'Reconnect requested');
+  const btn = $('reconnectBtn');
+  btn.disabled = true;
+  $('ctrlChip').textContent = 'working';
+  $('ctrlChip').className = 'chip warn';
+  setCtrl('Reconnecting… this can take ~30 s', 'warn');
+  try {
+    const res = await fetch('/api/reconnect', { method: 'POST' });
+    const j = await res.json();
+    if (!j.ok) throw new Error(j.error || 'failed');
+    setCtrl(j.connected ? 'Reconnected' : 'Reconnect finished but link is not up yet', j.connected ? 'good' : 'bad');
+    addEvent(j.connected ? 'good' : 'bad', j.connected ? 'Reconnected' : 'Reconnect incomplete');
+    $('ctrlChip').textContent = 'live';
+    $('ctrlChip').className = 'chip';
+    await tick();
+  } catch (e) {
+    setCtrl('Reconnect failed: ' + e.message, 'bad');
+    addEvent('bad', 'Reconnect failed: ' + e.message);
+    $('ctrlChip').textContent = 'error';
+    $('ctrlChip').className = 'chip bad';
+  } finally {
+    btn.disabled = false;
+  }
+}
+async function copyReport() {
+  const d = lastStatus || {};
+  const lines = [
+    'ZTE MF253V — inwi',
+    'Time: ' + new Date().toISOString(),
+    'Operator: ' + (d.network_provider || '—'),
+    'Type / band: ' + (d.network_type || '—') + ' / ' + (d.wan_active_band || '—'),
+    'Status: ' + prettyPpp(d.ppp_status),
+    'RSRP / RSRQ / RSSI: ' + (d.lte_rsrp || '—') + ' / ' + (d.lte_rsrq || '—') + ' / ' + (d.lte_rssi || '—') + ' dBm',
+    'PCI / EARFCN: ' + (d.lte_pci || '—') + ' / ' + (d.wan_active_channel || '—'),
+    'WAN IP: ' + (d.wan_ipaddr || '—') + '  gateway ' + (d.wan_gateway || '—'),
+    'Dial failures: ' + (d.ppp_dial_conn_fail_counter || '0'),
+    'Data this cycle: down ' + fmtBytes(d.monthly_rx_bytes) + ', up ' + fmtBytes(d.monthly_tx_bytes),
+    'Speed now: ↓' + fmtMbps(d.realtime_rx_thrpt) + ' Mbps ↑' + fmtMbps(d.realtime_tx_thrpt) + ' Mbps',
+    'WiFi: ' + (d.SSID1 || '—') + ' · ' + (d.AuthMode || '—') + '/' + (d.EncrypType || '—') + ' · ' + (d.station_num || '0') + ' clients',
+  ];
+  try {
+    await navigator.clipboard.writeText(lines.join('\n'));
+    setCtrl('Report copied to clipboard', 'good');
+  } catch (e) {
+    setCtrl('Copy failed: ' + e.message, 'bad');
+  }
+}
+
+/* ---------- clients ---------- */
+async function loadClients() {
+  try {
+    const res = await fetch('/api/clients', { cache: 'no-store' });
+    const j = await res.json();
+    if (!j.ok) return;
+    const list = $('clientList');
+    if (!j.clients.length) {
+      list.innerHTML = '<div class="empty">No devices reported</div>';
+      return;
+    }
+    const selfIp = settings && settings.mac ? settings.mac.userIp : '';
+    list.innerHTML = j.clients.map((c) => {
+      const isSelf = selfIp && c.ip === selfIp;
+      const canBlock = c.type === 'wifi' && !isSelf && c.mac;
+      return '<div class="client">' +
+        '<div class="cIcon">' + (c.type === 'wifi' ? '📶' : '🖥️') + '</div>' +
+        '<div class="cMain"><b>' + esc(c.host) + '</b><span>' + esc(c.ip || '—') + '</span></div>' +
+        '<div class="cMac">' + esc(c.mac || '') + '</div>' +
+        (canBlock ? '<button class="blockBtn" data-mac="' + esc(c.mac) + '" data-host="' + esc(c.host) + '" data-ip="' + esc(c.ip) + '">block</button>' : '') +
+      '</div>';
+    }).join('');
+    list.querySelectorAll('.blockBtn').forEach((b) => {
+      b.addEventListener('click', () => blockClient(b.dataset.mac, b.dataset.host, b.dataset.ip));
+    });
+  } catch (_) { /* ignore */ }
+}
+
+/* ---------- online state ---------- */
+function setOnline(ok) {
+  const d = $('dot');
+  d.classList.toggle('ok', ok);
+  d.classList.toggle('err', !ok);
+}
+function banner(msg) {
+  const b = $('banner');
+  if (msg) { b.textContent = msg; b.classList.add('show'); }
+  else { b.classList.remove('show'); }
+}
+
+/* ---------- polling ---------- */
+async function tick() {
+  try {
+    const res = await fetch('/api/status', { cache: 'no-store' });
+    const j = await res.json();
+    if (!j.ok) throw new Error(j.error || 'Router error');
+    render(j.data);
+    if (j.router) { try { $('routerIp').textContent = new URL(j.router).hostname; } catch (_) {} }
+    setOnline(true);
+    $('lastUpdate').textContent = 'updated ' + new Date().toLocaleTimeString();
+    banner('');
+  } catch (e) {
+    setOnline(false);
+    banner('Cannot read router: ' + e.message);
+  }
+}
+function schedule() {
+  clearInterval(timer);
+  if (interval > 0) timer = setInterval(tick, interval);
+}
+
+/* ---------- theme ---------- */
+function applyTheme(t) {
+  document.documentElement.dataset.theme = t;
+  localStorage.setItem('theme', t);
+  $('themeBtn').textContent = t === 'light' ? '☾' : '☀';
+  if (lastStatus) { drawThroughput(); drawSignal(); drawLatency(); }
+}
+
+/* ---------- wire up ---------- */
+$('refresh').addEventListener('click', tick);
+$('interval').addEventListener('change', (e) => {
+  interval = Number(e.target.value);
+  $('ivl').textContent = interval ? (interval / 1000) + 's' : 'paused';
+  schedule();
+  if (interval) tick();
+});
+$('themeBtn').addEventListener('click', () => {
+  applyTheme(document.documentElement.dataset.theme === 'light' ? 'dark' : 'light');
+});
+$('diagBtn').addEventListener('click', runDiag);
+$('speedBtn').addEventListener('click', speedTest);
+$('reconnectBtn').addEventListener('click', doReconnect);
+$('copyBtn').addEventListener('click', copyReport);
+$('csvBtn').addEventListener('click', exportCsv);
+$('alertsBtn').addEventListener('click', toggleAlerts);
+$('clearEvents').addEventListener('click', () => { events = []; saveEvents(); renderEvents(); });
+document.querySelectorAll('.bandBtn').forEach((b) => {
+  b.addEventListener('click', () => applyBand(b.dataset.band));
+});
+
+/* control tab */
+$('connBtn').addEventListener('click', toggleConnection);
+$('wifiToggle').addEventListener('click', toggleWifi);
+$('wifiApply').addEventListener('click', applyWifi);
+$('apnDnsMode').addEventListener('change', updateApnDnsState);
+$('apnApply').addEventListener('click', applyApn);
+$('limApply').addEventListener('click', applyLimit);
+$('scanBtn').addEventListener('click', scanNetworks);
+$('autoNetBtn').addEventListener('click', setAutoOperator);
+$('clearBlocks').addEventListener('click', clearBlocks);
+$('rebootBtn').addEventListener('click', rebootRouter);
+$('reportBtn').addEventListener('click', loadReport);
+$('reportCsvBtn').addEventListener('click', downloadReportCsv);
+$('installBtn').addEventListener('click', installApp);
+$('installBtn2').addEventListener('click', installApp);
+document.querySelectorAll('.tab').forEach((b) => {
+  b.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach((x) => x.classList.toggle('active', x === b));
+    document.querySelectorAll('.tabPane').forEach((p) => p.classList.toggle('active', p.id === 'tab-' + b.dataset.tab));
+    if (b.dataset.tab === 'control') { loadSettings(); loadReport(); }
+  });
+});
+
+window.addEventListener('resize', () => { drawThroughput(); drawSignal(); drawLatency(); });
+
+applyTheme(localStorage.getItem('theme') || 'dark');
+renderEvents();
+renderSpeedHistory();
+updateAlertsBtn();
+tick();
+loadSettings();
+loadReport();
+schedule();
+runDiag();
+loadClients();
+loadLatency();
+loadUsage();
+setInterval(runDiag, 30000);
+setInterval(loadClients, 30000);
+setInterval(loadLatency, 5000);
+setInterval(loadUsage, 60000);
+</script>
+</body>
+</html>
