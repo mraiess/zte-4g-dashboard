@@ -28,8 +28,8 @@ origin. No dependencies, no build step, no cloud.
 - Speed test — server-side 10 MB download, Mbps and MB/s, local history
 - Data usage — live cycle total, yesterday (00:00–24:00), last 7 full days,
   session totals, optional plan-limit bar
-- Past cycles — final ↓/↑ totals for previous months, kept after the router
-  resets its counters
+- Past cycles — click **History** in the top bar to see the current and all
+  saved cycles; previous months stay after the router resets its counters
 - Daily availability report — uptime, WAN latency and loss per day, CSV export
 - Connected clients — WiFi and LAN devices with name, IP and MAC
 - Activity log — link, DNS, signal, band, reconnect and speed-test events

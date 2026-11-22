@@ -322,7 +322,14 @@
   .blockRow .bm span{color:var(--dim);font-family:ui-monospace,Consolas,monospace;font-size:10px}
   .blockRow button{padding:4px 8px;font-size:11px}
   .client .blockBtn{padding:4px 7px;font-size:10.5px;border-radius:8px;flex:none}
-</style>
+  /* ---------- history dialog ---------- */
+  .modal{position:fixed;inset:0;background:rgba(0,0,0,.62);display:none;align-items:center;justify-content:center;padding:16px;z-index:60}
+  .modal.show{display:flex}
+  .modalCard{background:var(--panel);border:1px solid var(--line);border-radius:16px;width:min(520px,100%);max-height:80vh;overflow:auto;padding:18px}
+  .modalHead{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}
+  .modalHead h2{margin:0;font-size:11px;font-weight:700;letter-spacing:1.6px;text-transform:uppercase;color:var(--muted)}
+  .modalCard .clientList{margin-top:0;max-height:none}
+  </style>
 </head>
 <body>
 <div class="app">
@@ -337,6 +344,7 @@
     <div class="controls">
       <span class="updated" id="lastUpdate">—</span>
       <button id="installBtn" class="primary" hidden>Install app</button>
+      <button id="historyBtn" title="Saved data usage by cycle">History</button>
       <button class="iconBtn" id="themeBtn" title="Toggle light / dark">☀</button>
       <select id="interval" title="Refresh interval">
         <option value="1000">1s</option>
@@ -670,6 +678,13 @@
   </main>
 
   <footer>Local dashboard · proxied from <b id="routerIp">192.168.0.1</b> · <span id="ivl">3s</span> refresh · v3.0</footer>
+
+  <div class="modal" id="historyModal" role="dialog" aria-modal="true" aria-label="Data usage history">
+    <div class="modalCard">
+      <div class="modalHead"><h2>Data usage history</h2><button id="historyClose" title="Close">✕</button></div>
+      <div class="clientList" id="historyModalList"><div class="empty">Loading…</div></div>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -1381,15 +1396,17 @@ async function loadHistory() {
     const res = await fetch('/api/history', { cache: 'no-store' });
     const j = await res.json();
     if (!j.ok) return;
-    const past = (j.cycles || []).filter((c) => !c.current);
+    const all = j.cycles || [];
+    const past = all.filter((c) => !c.current);
+    const row = (c) =>
+      '<div class="client"><div class="cIcon">📅</div><div class="cMain">' +
+      '<b>' + (c.current ? 'This cycle' : 'Cycle ' + esc(fmtDate(c.month))) + '</b>' +
+      '<span>↓ ' + fmtBytes(c.rx) + ' · ↑ ' + fmtBytes(c.tx) + '</span>' +
+      '</div><div class="cMac">' + esc(fmtBytes(c.total)) + '</div></div>';
+    const empty = '<div class="empty">No completed cycles yet. Each cycle is saved automatically when the month changes.</div>';
     $('historyChip').textContent = past.length ? past.length + ' saved' : 'none yet';
-    $('historyList').innerHTML = past.length
-      ? past.map((c) =>
-          '<div class="client"><div class="cIcon">📅</div><div class="cMain">' +
-          '<b>Cycle ' + esc(fmtDate(c.month)) + '</b><span>↓ ' + fmtBytes(c.rx) + ' · ↑ ' + fmtBytes(c.tx) + '</span>' +
-          '</div><div class="cMac">' + esc(fmtBytes(c.total)) + '</div></div>'
-        ).join('')
-      : '<div class="empty">No completed cycles yet. Each cycle is saved automatically when the month changes.</div>';
+    $('historyList').innerHTML = past.length ? past.map(row).join('') : empty;
+    $('historyModalList').innerHTML = all.length ? all.map(row).join('') : empty;
   } catch (_) { /* ignore */ }
 }
 function renderUsageWindow(w, key) {
@@ -2049,6 +2066,10 @@ loadClients();
 loadLatency();
 loadUsage();
 loadHistory();
+$('historyBtn').addEventListener('click', () => { loadHistory(); $('historyModal').classList.add('show'); });
+$('historyClose').addEventListener('click', () => $('historyModal').classList.remove('show'));
+$('historyModal').addEventListener('click', (e) => { if (e.target === $('historyModal')) $('historyModal').classList.remove('show'); });
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape') $('historyModal').classList.remove('show'); });
 setInterval(runDiag, 30000);
 setInterval(loadClients, 30000);
 setInterval(loadLatency, 5000);
