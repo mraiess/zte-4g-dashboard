@@ -508,6 +508,12 @@
       </div>
     </section>
 
+    <!-- past cycles -->
+    <section class="card span4">
+      <div class="cardHead"><h2>Past cycles</h2><span class="chip" id="historyChip">—</span></div>
+      <div class="clientList" id="historyList"><div class="empty">Loading…</div></div>
+    </section>
+
     <!-- wifi + clients -->
     <section class="card span4">
       <div class="cardHead"><h2>WiFi</h2><span class="chip" id="wifiState">—</span></div>
@@ -1370,6 +1376,22 @@ async function loadUsage() {
     renderUsageWindow(j.week, 'week');
   } catch (_) {}
 }
+async function loadHistory() {
+  try {
+    const res = await fetch('/api/history', { cache: 'no-store' });
+    const j = await res.json();
+    if (!j.ok) return;
+    const past = (j.cycles || []).filter((c) => !c.current);
+    $('historyChip').textContent = past.length ? past.length + ' saved' : 'none yet';
+    $('historyList').innerHTML = past.length
+      ? past.map((c) =>
+          '<div class="client"><div class="cIcon">📅</div><div class="cMain">' +
+          '<b>Cycle ' + esc(fmtDate(c.month)) + '</b><span>↓ ' + fmtBytes(c.rx) + ' · ↑ ' + fmtBytes(c.tx) + '</span>' +
+          '</div><div class="cMac">' + esc(fmtBytes(c.total)) + '</div></div>'
+        ).join('')
+      : '<div class="empty">No completed cycles yet. Each cycle is saved automatically when the month changes.</div>';
+  } catch (_) { /* ignore */ }
+}
 function renderUsageWindow(w, key) {
   if (!w) return;
   const totalEl = $(key + 'Usage');
@@ -2026,10 +2048,12 @@ runDiag();
 loadClients();
 loadLatency();
 loadUsage();
+loadHistory();
 setInterval(runDiag, 30000);
 setInterval(loadClients, 30000);
 setInterval(loadLatency, 5000);
 setInterval(loadUsage, 60000);
+setInterval(loadHistory, 300000);
 </script>
 </body>
 </html>

@@ -1,5 +1,6 @@
 # runtime data
 report.jsonl
+usage-history.json
 *.log
 
 # dependencies (none required, kept for safety)

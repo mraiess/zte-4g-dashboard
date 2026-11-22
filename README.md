@@ -28,6 +28,8 @@ origin. No dependencies, no build step, no cloud.
 - Speed test — server-side 10 MB download, Mbps and MB/s, local history
 - Data usage — live cycle total, yesterday (00:00–24:00), last 7 full days,
   session totals, optional plan-limit bar
+- Past cycles — final ↓/↑ totals for previous months, kept after the router
+  resets its counters
 - Daily availability report — uptime, WAN latency and loss per day, CSV export
 - Connected clients — WiFi and LAN devices with name, IP and MAC
 - Activity log — link, DNS, signal, band, reconnect and speed-test events
@@ -110,6 +112,7 @@ node server.js
 | `GET` | `/api/settings` | Current WiFi, APN, limit and block settings |
 | `GET` | `/api/report?days=7` | Daily availability report |
 | `GET` | `/api/usage` | Cycle total + yesterday + last 7 full days |
+| `GET` | `/api/history` | Saved totals for past cycles |
 | `GET` | `/api/speedtest?bytes=10000000` | Server-side download test |
 | `GET` | `/api/health` | Liveness and version |
 | `POST` | `/api/band` | `{ "band": "auto"\|"b1"\|"b3"\|"b7"\|"b20" }` |
@@ -147,6 +150,20 @@ Because there is no historical data to backfill, the calendar windows show
 yet` before that. The same file powers the availability report. Samples are
 kept for 30 days, and the file stores only aggregate byte counts, link state,
 signal and latency — no browsing history, domains or per-device traffic.
+
+### Past cycles
+
+`report.jsonl` is pruned after 30 days, so monthly totals are written to a
+separate small file, `usage-history.json` (also git-ignored). On every status
+read the server saves a snapshot for the router's current `date_month`, keeping
+the highest value seen. When `date_month` changes, the old entry is left as the
+final total for that cycle and the **Past cycles** card lists it as
+`Cycle YYYY-MM-DD` with its ↓/↑ and combined total. Up to 24 cycles are kept.
+
+A snapshot is written at most once per minute. If the server is stopped when
+the month rolls over, the saved total is the last value seen before it stopped;
+a cycle that ended entirely while the server was off cannot be recovered from
+the router.
 
 ## Firmware notes
 
@@ -189,6 +206,7 @@ icon.svg
 start.cmd               Windows launcher (local / LAN mode)
 stop.cmd                stop the server on port 8787
 report.jsonl            runtime samples (created on first run, git-ignored)
+usage-history.json      saved monthly totals (created on first run, git-ignored)
 ```
 
 ## Troubleshooting

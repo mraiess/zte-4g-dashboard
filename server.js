@@ -16,6 +16,7 @@
  *   GET  /api/settings     current router settings
  *   GET  /api/report       daily availability report
  *   GET  /api/usage        cycle + yesterday + last 7 full days
+ *   GET  /api/history      saved totals for past cycles
  *   GET  /api/health       liveness + version
  *   POST /api/band         { band: "auto"|"b1"|"b3"|"b7"|"b20" }
  *   POST /api/reconnect    disconnect + reconnect the PDP session
@@ -153,7 +154,7 @@ async function getStatus() {
   inflight = (async () => {
     try {
       const d = await fetchStatusFresh();
-      if (hasLiveData(d)) cache = { ts: Date.now(), data: d };
+      if (hasLiveData(d)) { cache = { ts: Date.now(), data: d }; recordCycle(d); }
       return d;
     } finally {
       inflight = null;
@@ -542,6 +543,38 @@ function numOrNull(v) {
   if (v === '' || v == null) return null;
   const n = Number(v);
   return Number.isFinite(n) ? n : null;
+}
+
+// Per-cycle totals survive the router resetting its monthly counters. The
+// last snapshot of a cycle is kept when date_month changes; report.jsonl is
+// pruned after 30 days, so it cannot serve as long-term history.
+const HISTORY_FILE = path.join(__dirname, 'usage-history.json');
+const HISTORY_MAX = 24;
+
+function readHistory() {
+  try {
+    const v = JSON.parse(fs.readFileSync(HISTORY_FILE, 'utf8'));
+    return Array.isArray(v) ? v : [];
+  } catch (_) { return []; }
+}
+
+function recordCycle(st) {
+  const month = String(st && st.date_month || '');
+  const rx = numOrNull(st && st.monthly_rx_bytes);
+  const tx = numOrNull(st && st.monthly_tx_bytes);
+  if (!/^\d{8}$/.test(month) || rx == null || tx == null) return;
+  const list = readHistory();
+  let entry = list.find((x) => x && x.month === month);
+  if (!entry) { entry = { month, rx, tx, updated: 0 }; list.push(entry); }
+  // Keep the high-water mark: a transient drop must not erase a cycle total.
+  if (rx >= (entry.rx || 0) && tx >= (entry.tx || 0) && (rx !== entry.rx || tx !== entry.tx)) {
+    entry.rx = rx;
+    entry.tx = tx;
+  }
+  if (Date.now() - (entry.updated || 0) < 60000) return;
+  entry.updated = Date.now();
+  list.sort((a, b) => String(b.month).localeCompare(String(a.month)));
+  try { fs.writeFileSync(HISTORY_FILE, JSON.stringify(list.slice(0, HISTORY_MAX), null, 2) + '\n'); } catch (_) { /* ignore */ }
 }
 
 // Local-midnight boundary, offset by whole days.
@@ -1075,6 +1108,25 @@ const server = http.createServer(async (req, res) => {
           week: { from: weekStart, to: today },
         },
       });
+      return;
+    }
+
+    if (p === '/api/history') {
+      const st = await getStatus();
+      const current = st ? String(st.date_month || '') : '';
+      const cycles = readHistory()
+        .filter((x) => x && /^\d{8}$/.test(String(x.month)))
+        .sort((a, b) => String(b.month).localeCompare(String(a.month)))
+        .map((x) => {
+          const rx = Number(x.rx) || 0;
+          const tx = Number(x.tx) || 0;
+          return {
+            month: x.month, rx, tx, total: rx + tx,
+            current: x.month === current,
+            updated: x.updated || null,
+          };
+        });
+      sendJson(res, 200, { ok: true, current, cycles });
       return;
     }
 
