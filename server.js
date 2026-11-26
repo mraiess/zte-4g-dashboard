@@ -47,6 +47,7 @@ const ROUTER = (process.env.ROUTER || 'http://192.168.0.1').replace(/\/+$/, '');
 const PASSWORD = process.env.ROUTER_PASS || 'admin';
 const PORT = Number(process.env.PORT || 8787);
 const HOST = process.env.HOST || '127.0.0.1';
+const PROXY_PORT = Number(process.env.PROXY_PORT || 8899);
 let ROUTER_HOST = '192.168.0.1';
 try { ROUTER_HOST = new URL(ROUTER).hostname; } catch (_) { /* keep default */ }
 
@@ -1218,6 +1219,28 @@ const server = http.createServer(async (req, res) => {
   } catch (err) {
     sendJson(res, 500, { ok: false, error: String((err && err.message) || err) });
   }
+});
+
+// Local CONNECT proxy so browsers resolve through DoH, not the flaky router relay.
+const proxy = http.createServer((req, res) => {
+  res.writeHead(400);
+  res.end('CONNECT required');
+});
+proxy.on('connect', async (req, client, head) => {
+  const [host, rawPort] = String(req.url || '').split(':');
+  let ip;
+  try { ip = (await dohResolve(host))[0]; } catch (_) { client.destroy(); return; }
+  const upstream = net.connect(Number(rawPort) || 443, ip, () => {
+    client.write('HTTP/1.1 200 Connection Established\r\n\r\n');
+    if (head && head.length) upstream.write(head);
+    upstream.pipe(client);
+    client.pipe(upstream);
+  });
+  upstream.on('error', () => client.destroy());
+  client.on('error', () => upstream.destroy());
+});
+proxy.listen(PROXY_PORT, '127.0.0.1', () => {
+  console.log('DoH proxy       -> http://127.0.0.1:' + PROXY_PORT);
 });
 
 server.listen(PORT, HOST, () => {

@@ -23,6 +23,7 @@ origin. No dependencies, no build step, no cloud.
 - Network — operator, type/band, WAN IP, gateway, netmask, dial failures,
   session time
 - Diagnostics — DoH DNS, TCP 443 and HTTPS checks with pass/fail pills
+- Local DoH proxy on `127.0.0.1:8899` for browsers and git
 - Latency monitor — 10 s TCP probes to the router and the internet, with
   min/avg/max, packet loss and a dual-line chart
 - Speed test — server-side 10 MB download, Mbps and MB/s, local history
@@ -222,7 +223,7 @@ usage-history.json      saved monthly totals (created on first run, git-ignored)
 | Login works in the browser but not here | The session expired; the proxy logs in before every call — check the password |
 | 3G instead of LTE | Click **Auto**, then **Reconnect** |
 | DNS/HTTPS show `FAIL` or pages hang | Lock **B3** (band test: 2.1 Mbps vs 0.5 Mbps on B20), keep DNS mode **Auto**, then reconnect |
-| Browser pages still stall while diagnostics pass | Enable Secure DNS / DoH in the browser with `https://cloudflare-dns.com/dns-query`; plain UDP DNS to public servers is blocked on this link |
+| Browser pages still stall while diagnostics pass | Set Windows proxy to `127.0.0.1:8899` (the dashboard’s DoH proxy) and restart the browser, or enable browser Secure DNS with `https://cloudflare-dns.com/dns-query` |
 | Yesterday / 7 days show `no samples yet` | Expected until the server has sampled across a local midnight |
 | Port 8787 already in use | `stop.cmd`, or set `PORT` to something else |
 | Phone cannot open the LAN URL | Start with `start.cmd lan` and allow Node through the Windows firewall |
