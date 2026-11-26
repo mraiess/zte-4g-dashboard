@@ -22,7 +22,7 @@ origin. No dependencies, no build step, no cloud.
 - Signal history — RSRP + RSRQ chart
 - Network — operator, type/band, WAN IP, gateway, netmask, dial failures,
   session time
-- Diagnostics — uncached router DNS, TCP 443 and HTTPS checks with pass/fail pills
+- Diagnostics — DoH DNS, TCP 443 and HTTPS checks with pass/fail pills
 - Latency monitor — 10 s TCP probes to the router and the internet, with
   min/avg/max, packet loss and a dual-line chart
 - Speed test — server-side 10 MB download, Mbps and MB/s, local history
@@ -180,10 +180,10 @@ the router.
 - Keep **DNS mode: Auto**. On this connection the router cannot reach
   `1.1.1.1` / `8.8.8.8` as manual upstream servers, so manual DNS makes all
   lookups time out. The carrier relay is the only working upstream.
-- The DNS diagnostic queries the router relay directly, bypassing the Windows
-  DNS cache, so a slow or stalled relay shows as `FAIL` instead of a cached `OK`.
-  The server primes the relay at startup, after each reconnect and every
-  5 minutes because it otherwise stalls for ~12 s on the first lookup.
+- The router DNS relay stalls intermittently for minutes. The dashboard uses
+  DNS-over-HTTPS (`dns.google`, fallback `cloudflare-dns.com`) for its DNS,
+  HTTPS and speed-test checks, with a 60 s cache that is primed at startup,
+  after each reconnect and every 5 minutes.
 - WiFi passwords are read and written base64-encoded (`WPAPSK1_encode`).
 
 ## Security

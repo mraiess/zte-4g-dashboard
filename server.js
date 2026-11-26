@@ -39,7 +39,7 @@
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
-const dns = require('dns');
+const https = require('https');
 const net = require('net');
 const os = require('os');
 
@@ -361,7 +361,7 @@ async function doReconnect() {
   await login();
   await routerPost('/goform/goform_set_cmd_process', 'isTest=false&goformId=CONNECT_NETWORK');
   const st = await waitConnected(45000);
-  if (st && st.ppp_status === 'ppp_connected') await warmRouterDns();
+  if (st && st.ppp_status === 'ppp_connected') await warmDoh();
   return { connected: !!(st && st.ppp_status === 'ppp_connected'), status: st };
 }
 
@@ -633,22 +633,66 @@ const DNS_TEST_HOSTS = [
   'github.com', 'www.google.com', 'www.microsoft.com', 'www.apple.com', 'cloudflare.com', 'example.com',
 ];
 
-async function queryRouterDns(host) {
-  const resolver = new dns.promises.Resolver();
-  resolver.setServers([ROUTER_HOST]);
-  return withTimeout(resolver.resolve4(host), 4000, 'DNS timeout');
+// Plain DNS to public servers is blocked here, but HTTPS to them works.
+const DOH_SERVERS = [
+  { ip: '8.8.8.8', host: 'dns.google', path: '/resolve' },
+  { ip: '1.1.1.1', host: 'cloudflare-dns.com', path: '/dns-query' },
+];
+const dohCache = new Map();
+
+function fixedLookup(ip) {
+  return (hostname, options, cb) => {
+    if (options && options.all) cb(null, [{ address: ip, family: 4 }]);
+    else cb(null, ip, 4);
+  };
 }
 
-// The router relay stalls for ~12 s after a PDP reconnect; prime it before use.
-async function warmRouterDns() {
-  for (const host of DNS_TEST_HOSTS.slice(0, 4)) {
+function httpsGet(host, path, ip, timeoutMs, collect = false) {
+  return new Promise((resolve, reject) => {
+    const req = https.get({
+      hostname: host,
+      servername: host,
+      path,
+      lookup: fixedLookup(ip),
+      timeout: timeoutMs,
+    }, (res) => {
+      const chunks = collect ? [] : null;
+      if (!collect) res.resume();
+      res.on('data', (c) => { if (chunks) chunks.push(c); });
+      res.on('end', () => resolve({
+        status: res.statusCode,
+        body: chunks ? Buffer.concat(chunks) : null,
+      }));
+    });
+    req.on('timeout', () => req.destroy(new Error('timeout')));
+    req.on('error', reject);
+    req.end();
+  });
+}
+
+async function dohResolve(name) {
+  const hit = dohCache.get(name);
+  if (hit && Date.now() - hit.ts < 60000) return hit.addrs;
+  let last = null;
+  for (const s of DOH_SERVERS) {
     try {
-      await queryRouterDns(host);
-      await dns.promises.lookup(host, { family: 4 }).catch(() => {});
-      return true;
-    } catch (_) { /* try another name */ }
+      const url = s.path + '?name=' + encodeURIComponent(name) + '&type=A';
+      const res = await httpsGet(s.host, url, s.ip, 6000, true);
+      const j = JSON.parse(res.body.toString());
+      const addrs = (j.Answer || []).filter((a) => a.type === 1).map((a) => a.data);
+      if (addrs.length) {
+        dohCache.set(name, { ts: Date.now(), addrs });
+        return addrs;
+      }
+    } catch (e) { last = e; }
   }
-  return false;
+  throw last || new Error('DoH lookup failed');
+}
+
+async function warmDoh() {
+  for (const host of DNS_TEST_HOSTS.slice(0, 4)) {
+    try { await dohResolve(host); } catch (_) { /* keep warming */ }
+  }
 }
 
 async function runDiag() {
@@ -657,10 +701,8 @@ async function runDiag() {
   let t0 = Date.now();
   const host = DNS_TEST_HOSTS[Math.floor(Date.now() / 1000) % DNS_TEST_HOSTS.length];
   try {
-    // Query the router's relay directly; dns.lookup() uses the OS cache and
-    // hides relay stalls that make browsers show DNS/HTTPS failures.
-    const addrs = await queryRouterDns(host);
-    out.dns = { ok: true, ms: Date.now() - t0, host, addrs };
+    const addrs = await dohResolve(host);
+    out.dns = { ok: true, ms: Date.now() - t0, host, addrs, via: 'DoH' };
   } catch (e) {
     out.dns = { ok: false, ms: Date.now() - t0, host, error: String((e && e.message) || e) };
   }
@@ -679,8 +721,9 @@ async function runDiag() {
 
   t0 = Date.now();
   try {
-    const res = await fetch('https://www.google.com/generate_204', { signal: AbortSignal.timeout(8000) });
-    out.http = { ok: res.status === 204 || res.ok, status: res.status, ms: Date.now() - t0 };
+    const ip = (await dohResolve('www.google.com'))[0];
+    const res = await httpsGet('www.google.com', '/generate_204', ip, 8000);
+    out.http = { ok: res.status === 204 || (res.status >= 200 && res.status < 300), status: res.status, ms: Date.now() - t0 };
   } catch (e) {
     out.http = { ok: false, ms: Date.now() - t0, error: String((e && e.message) || e) };
   }
@@ -690,11 +733,11 @@ async function runDiag() {
 
 async function runSpeedTest(bytes) {
   const n = Math.max(1e6, Math.min(50e6, Number(bytes) || 10e6));
-  const url = 'https://speed.cloudflare.com/__down?bytes=' + n + '&r=' + Math.random();
   const t0 = Date.now();
-  const res = await fetch(url, { signal: AbortSignal.timeout(120000) });
-  if (!res.ok) throw new Error('HTTP ' + res.status);
-  const buf = await res.arrayBuffer();
+  const ip = (await dohResolve('speed.cloudflare.com'))[0];
+  const res = await httpsGet('speed.cloudflare.com', '/__down?bytes=' + n + '&r=' + Math.random(), ip, 120000, true);
+  if (!(res.status >= 200 && res.status < 300)) throw new Error('HTTP ' + res.status);
+  const buf = res.body;
   const secs = Math.max(0.001, (Date.now() - t0) / 1000);
   return {
     bytes: buf.byteLength,
@@ -1189,14 +1232,14 @@ server.listen(PORT, HOST, () => {
       }
     }
   }
-  warmRouterDns();
+  warmDoh();
   sampleLatency();
   setInterval(sampleLatency, 10000);
   pruneReport();
   setTimeout(sampleReport, 5000);
   setInterval(sampleReport, 60000);
   setInterval(pruneReport, 24 * 60 * 60 * 1000);
-  setInterval(warmRouterDns, 5 * 60 * 1000);
+  setInterval(warmDoh, 5 * 60 * 1000);
 });
 
 process.on('unhandledRejection', (e) => {
