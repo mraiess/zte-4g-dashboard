@@ -22,7 +22,7 @@ origin. No dependencies, no build step, no cloud.
 - Signal history — RSRP + RSRQ chart
 - Network — operator, type/band, WAN IP, gateway, netmask, dial failures,
   session time
-- Diagnostics — DNS, TCP 443 and HTTPS checks with pass/fail pills
+- Diagnostics — uncached router DNS, TCP 443 and HTTPS checks with pass/fail pills
 - Latency monitor — 10 s TCP probes to the router and the internet, with
   min/avg/max, packet loss and a dual-line chart
 - Speed test — server-side 10 MB download, Mbps and MB/s, local history
@@ -177,8 +177,13 @@ the router.
 - `SCAN_NETWORK` is unsupported by this firmware, so the network scan list
   stays empty; manual operator selection works but drops the PDP session.
 - USSD and SMS are broken on this firmware.
-- The carrier's automatic DNS was empty, which made domain lookups fail while
-  pings worked. Setting the APN DNS manually to `1.1.1.1` / `8.8.8.8` fixed it.
+- Keep **DNS mode: Auto**. On this connection the router cannot reach
+  `1.1.1.1` / `8.8.8.8` as manual upstream servers, so manual DNS makes all
+  lookups time out. The carrier relay is the only working upstream.
+- The DNS diagnostic queries the router relay directly, bypassing the Windows
+  DNS cache, so a slow or stalled relay shows as `FAIL` instead of a cached `OK`.
+  The server primes the relay at startup, after each reconnect and every
+  5 minutes because it otherwise stalls for ~12 s on the first lookup.
 - WiFi passwords are read and written base64-encoded (`WPAPSK1_encode`).
 
 ## Security
@@ -216,6 +221,7 @@ usage-history.json      saved monthly totals (created on first run, git-ignored)
 | `Router did not return live data` | Check the router IP and `ROUTER_PASS`; open `http://192.168.0.1` in a browser |
 | Login works in the browser but not here | The session expired; the proxy logs in before every call — check the password |
 | 3G instead of LTE | Click **Auto**, then **Reconnect** |
+| DNS/HTTPS show `FAIL` or pages hang | Lock **B3** (band test: 2.1 Mbps vs 0.5 Mbps on B20), keep DNS mode **Auto**, then reconnect |
 | Yesterday / 7 days show `no samples yet` | Expected until the server has sampled across a local midnight |
 | Port 8787 already in use | `stop.cmd`, or set `PORT` to something else |
 | Phone cannot open the LAN URL | Start with `start.cmd lan` and allow Node through the Windows firewall |

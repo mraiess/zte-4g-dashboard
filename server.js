@@ -361,6 +361,7 @@ async function doReconnect() {
   await login();
   await routerPost('/goform/goform_set_cmd_process', 'isTest=false&goformId=CONNECT_NETWORK');
   const st = await waitConnected(45000);
+  if (st && st.ppp_status === 'ppp_connected') await warmRouterDns();
   return { connected: !!(st && st.ppp_status === 'ppp_connected'), status: st };
 }
 
@@ -628,17 +629,40 @@ function usageWindow(recs, startMs, endMs) {
   };
 }
 
+const DNS_TEST_HOSTS = [
+  'www.google.com', 'www.microsoft.com', 'www.apple.com', 'cloudflare.com', 'example.com',
+];
+
+async function queryRouterDns(host) {
+  const resolver = new dns.promises.Resolver();
+  resolver.setServers([ROUTER_HOST]);
+  return withTimeout(resolver.resolve4(host), 4000, 'DNS timeout');
+}
+
+// The router relay stalls for ~12 s after a PDP reconnect; prime it before use.
+async function warmRouterDns() {
+  for (const host of DNS_TEST_HOSTS.slice(0, 4)) {
+    try {
+      await queryRouterDns(host);
+      await dns.promises.lookup(host, { family: 4 }).catch(() => {});
+      return true;
+    } catch (_) { /* try another name */ }
+  }
+  return false;
+}
+
 async function runDiag() {
   const out = { ts: Date.now() };
 
   let t0 = Date.now();
+  const host = DNS_TEST_HOSTS[Math.floor(Date.now() / 1000) % DNS_TEST_HOSTS.length];
   try {
-    // lookup() uses the OS resolver (same path the browser/Windows use),
-    // whereas resolve4() uses Node's c-ares config which can differ.
-    const res = await withTimeout(dns.promises.lookup('www.google.com', { family: 4 }), 6000, 'DNS timeout');
-    out.dns = { ok: true, ms: Date.now() - t0, addrs: [res.address] };
+    // Query the router's relay directly; dns.lookup() uses the OS cache and
+    // hides relay stalls that make browsers show DNS/HTTPS failures.
+    const addrs = await queryRouterDns(host);
+    out.dns = { ok: true, ms: Date.now() - t0, host, addrs };
   } catch (e) {
-    out.dns = { ok: false, ms: Date.now() - t0, error: String((e && e.message) || e) };
+    out.dns = { ok: false, ms: Date.now() - t0, host, error: String((e && e.message) || e) };
   }
 
   const times = [];
@@ -1165,12 +1189,14 @@ server.listen(PORT, HOST, () => {
       }
     }
   }
+  warmRouterDns();
   sampleLatency();
   setInterval(sampleLatency, 10000);
   pruneReport();
   setTimeout(sampleReport, 5000);
   setInterval(sampleReport, 60000);
   setInterval(pruneReport, 24 * 60 * 60 * 1000);
+  setInterval(warmRouterDns, 5 * 60 * 1000);
 });
 
 process.on('unhandledRejection', (e) => {
