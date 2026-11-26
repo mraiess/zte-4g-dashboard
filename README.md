@@ -222,6 +222,7 @@ usage-history.json      saved monthly totals (created on first run, git-ignored)
 | Login works in the browser but not here | The session expired; the proxy logs in before every call — check the password |
 | 3G instead of LTE | Click **Auto**, then **Reconnect** |
 | DNS/HTTPS show `FAIL` or pages hang | Lock **B3** (band test: 2.1 Mbps vs 0.5 Mbps on B20), keep DNS mode **Auto**, then reconnect |
+| Browser pages still stall while diagnostics pass | Enable Secure DNS / DoH in the browser with `https://cloudflare-dns.com/dns-query`; plain UDP DNS to public servers is blocked on this link |
 | Yesterday / 7 days show `no samples yet` | Expected until the server has sampled across a local midnight |
 | Port 8787 already in use | `stop.cmd`, or set `PORT` to something else |
 | Phone cannot open the LAN URL | Start with `start.cmd lan` and allow Node through the Windows firewall |

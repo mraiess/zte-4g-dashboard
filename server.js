@@ -630,7 +630,7 @@ function usageWindow(recs, startMs, endMs) {
 }
 
 const DNS_TEST_HOSTS = [
-  'www.google.com', 'www.microsoft.com', 'www.apple.com', 'cloudflare.com', 'example.com',
+  'github.com', 'www.google.com', 'www.microsoft.com', 'www.apple.com', 'cloudflare.com', 'example.com',
 ];
 
 async function queryRouterDns(host) {
