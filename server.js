@@ -1226,18 +1226,27 @@ const proxy = http.createServer((req, res) => {
   res.writeHead(400);
   res.end('CONNECT required');
 });
+proxy.on('clientError', (err, socket) => socket.destroy());
+
 proxy.on('connect', async (req, client, head) => {
-  const [host, rawPort] = String(req.url || '').split(':');
-  let ip;
-  try { ip = (await dohResolve(host))[0]; } catch (_) { client.destroy(); return; }
-  const upstream = net.connect(Number(rawPort) || 443, ip, () => {
-    client.write('HTTP/1.1 200 Connection Established\r\n\r\n');
-    if (head && head.length) upstream.write(head);
-    upstream.pipe(client);
-    client.pipe(upstream);
-  });
-  upstream.on('error', () => client.destroy());
-  client.on('error', () => upstream.destroy());
+  let upstream = null;
+  const closeUpstream = () => { if (upstream) upstream.destroy(); };
+  client.on('error', closeUpstream);
+  client.on('close', closeUpstream);
+  try {
+    const [host, rawPort] = String(req.url || '').split(':');
+    const ip = (await dohResolve(host))[0];
+    upstream = net.connect(Number(rawPort) || 443, ip, () => {
+      if (client.destroyed) { upstream.destroy(); return; }
+      client.write('HTTP/1.1 200 Connection Established\r\n\r\n');
+      if (head && head.length) upstream.write(head);
+      upstream.pipe(client);
+      client.pipe(upstream);
+    });
+    upstream.on('error', () => client.destroy());
+  } catch (_) {
+    client.destroy();
+  }
 });
 proxy.listen(PROXY_PORT, '127.0.0.1', () => {
   console.log('DoH proxy       -> http://127.0.0.1:' + PROXY_PORT);
